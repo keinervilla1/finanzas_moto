@@ -18,11 +18,6 @@
    archivo firestore.rules.txt incluido en este proyecto).
    ========================================================================= */
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -35,7 +30,3 @@ const firebaseConfig = {
   appId: "1:385787435841:web:aa70f3b42bb49233cc9fc0",
   measurementId: "G-8VGWW818ZV"
 };
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
