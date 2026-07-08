@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Domi — Control de domicilios</title>
+
+<!-- PWA -->
+<meta name="theme-color" content="#0B7A4B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Domi">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png">
+
+<!-- Tipografías: Outfit para cifras/display, Inter para texto -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============ CONTENEDOR TIPO APP MÓVIL ============ -->
+<div class="app">
+
+  <!-- ---------- BARRA SUPERIOR ---------- -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__logo">🛵</span>
+      <div>
+        <p class="topbar__title" id="screenTitle">Hoy</p>
+        <p class="topbar__date" id="fechaActual">—</p>
+      </div>
+    </div>
+    <button class="topbar__goal" id="btnAbrirMeta" title="Meta semanal">
+      <svg id="ringMini" width="40" height="40" viewBox="0 0 40 40">
+        <circle cx="20" cy="20" r="16" class="ring-mini__bg"/>
+        <circle cx="20" cy="20" r="16" class="ring-mini__fg" id="ringMiniFg"/>
+      </svg>
+      <span class="topbar__goal-pct" id="metaMiniPct">0%</span>
+    </button>
+  </header>
+
+  <!-- ---------- CONTENIDO PRINCIPAL (pantallas) ---------- -->
+  <main class="screens" id="screens">
+
+    <!-- ===================== PANTALLA: INICIO ===================== -->
+    <section class="screen active" id="screen-inicio">
+
+      <!-- Tarjeta hero: ganancia del día en vivo + anillo de meta -->
+      <div class="card hero">
+        <div class="hero__info">
+          <p class="hero__label">Ganancia de hoy</p>
+          <p class="hero__value" id="gananciaHoy">$0</p>
+          <p class="hero__sub"><span id="cantidadHoy">0</span> domicilios realizados</p>
+        </div>
+        <div class="hero__ring">
+          <svg width="86" height="86" viewBox="0 0 86 86">
+            <circle cx="43" cy="43" r="36" class="ring__bg"/>
+            <circle cx="43" cy="43" r="36" class="ring__fg" id="ringHeroFg"/>
+          </svg>
+          <span class="hero__ring-label" id="ringHeroPct">0%</span>
+        </div>
+      </div>
+
+      <!-- Resumen rápido -->
+      <div class="stats-row">
+        <div class="stat-chip">
+          <p class="stat-chip__value" id="gananciaSemanaMini">$0</p>
+          <p class="stat-chip__label">Esta semana</p>
+        </div>
+        <div class="stat-chip">
+          <p class="stat-chip__value" id="promedioHoyMini">$0</p>
+          <p class="stat-chip__label">Promedio/domicilio</p>
+        </div>
+      </div>
+
+      <!-- Botón grande principal -->
+      <button class="btn-primary btn-big" id="btnAgregarDomicilio">
+        <span class="btn-big__icon">＋</span> Agregar domicilio
+      </button>
+
+      <button class="btn-secondary" id="btnCalcularDia">
+        📊 Hacer cálculo del día
+      </button>
+
+      <!-- Lista de domicilios de hoy -->
+      <div class="section-head">
+        <h2>Domicilios de hoy</h2>
+        <span class="pill" id="badgeHoy">0</span>
+      </div>
+      <ul class="entregas-list" id="listaHoy">
+        <!-- Se llena por JS -->
+      </ul>
+      <p class="empty-state" id="emptyHoy">Aún no registras domicilios hoy. Toca <strong>Agregar domicilio</strong> para empezar 🚀</p>
+    </section>
+
+    <!-- ===================== PANTALLA: SEMANA ===================== -->
+    <section class="screen" id="screen-semana">
+      <div class="card">
+        <div class="section-head" style="margin-top:0">
+          <h2>Meta semanal</h2>
+          <button class="link-btn" id="btnEditarMeta">Editar</button>
+        </div>
+        <div class="goal-bar">
+          <div class="goal-bar__fill" id="goalBarFill"></div>
+        </div>
+        <div class="goal-bar__labels">
+          <span id="goalActual">$0</span>
+          <span id="goalMeta">de $800.000</span>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-chip">
+          <p class="stat-chip__value" id="mejorDiaValor">$0</p>
+          <p class="stat-chip__label" id="mejorDiaNombre">Mejor día</p>
+        </div>
+        <div class="stat-chip">
+          <p class="stat-chip__value" id="promedioDiarioValor">$0</p>
+          <p class="stat-chip__label">Promedio diario</p>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>Días de esta semana</h2>
+      </div>
+      <ul class="dias-list" id="listaDias"><!-- JS --></ul>
+
+      <div class="card total-semana">
+        <span>Total de la semana</span>
+        <strong id="totalSemana">$0</strong>
+      </div>
+    </section>
+
+    <!-- ===================== PANTALLA: FRECUENTES ===================== -->
+    <section class="screen" id="screen-frecuentes">
+      <div class="section-head" style="margin-top:4px">
+        <h2>Domicilios frecuentes</h2>
+        <button class="link-btn" id="btnNuevoFrecuente">+ Nuevo</button>
+      </div>
+      <p class="hint">Créalos una vez y selecciónalos rápido al agregar un domicilio.</p>
+      <ul class="frecuentes-list" id="listaFrecuentes"><!-- JS --></ul>
+      <p class="empty-state" id="emptyFrecuentes">No tienes domicilios frecuentes todavía.</p>
+    </section>
+
+    <!-- ===================== PANTALLA: HISTORIAL ===================== -->
+    <section class="screen" id="screen-historial">
+      <div class="section-head" style="margin-top:4px">
+        <h2>Semanas anteriores</h2>
+      </div>
+      <ul class="historial-list" id="listaHistorial"><!-- JS --></ul>
+      <p class="empty-state" id="emptyHistorial">Todavía no hay semanas anteriores registradas.</p>
+    </section>
+
+  </main>
+
+  <!-- ---------- NAV INFERIOR ---------- -->
+  <nav class="tabbar">
+    <button class="tabbar__item active" data-screen="inicio">
+      <svg viewBox="0 0 24 24"><path d="M4 11.5 12 4l8 7.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1Z"/></svg>
+      <span>Inicio</span>
+    </button>
+    <button class="tabbar__item" data-screen="semana">
+      <svg viewBox="0 0 24 24"><path d="M4 10h16M7 3v4M17 3v4M6 6h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"/></svg>
+      <span>Semana</span>
+    </button>
+    <button class="tabbar__item" data-screen="frecuentes">
+      <svg viewBox="0 0 24 24"><path d="M20 7h-3.2l-1.6-2.4A2 2 0 0 0 13.5 3.6h-3a2 2 0 0 0-1.7 1L7.2 7H4a1 1 0 0 0 0 2h1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9h1a1 1 0 0 0 0-2ZM12 17a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>
+      <span>Frecuentes</span>
+    </button>
+    <button class="tabbar__item" data-screen="historial">
+      <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 1-7.4 5M4 4v5h5M12 8v5l4 2"/></svg>
+      <span>Historial</span>
+    </button>
+  </nav>
+</div>
+
+<!-- ============ BOTTOM SHEET: AGREGAR / EDITAR DOMICILIO ============ -->
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="sheet" id="sheetDomicilio">
+  <div class="sheet__handle"></div>
+  <h3 class="sheet__title" id="sheetTitulo">Agregar domicilio</h3>
+
+  <div class="chips" id="chipsFrecuentes"><!-- JS --></div>
+
+  <label class="field">
+    <span>Nombre del domicilio</span>
+    <input type="text" id="inputNombre" placeholder="Ej: Éxito, D1, Farmatodo…">
+  </label>
+
+  <label class="field">
+    <span>Valor ganado</span>
+    <input type="number" id="inputValor" placeholder="0" inputmode="numeric">
+  </label>
+
+  <label class="field">
+    <span>Hora</span>
+    <input type="time" id="inputHora">
+  </label>
+
+  <div class="sheet__actions">
+    <button class="btn-ghost" id="btnCancelarDomicilio">Cancelar</button>
+    <button class="btn-primary" id="btnGuardarDomicilio">Guardar</button>
+  </div>
+</div>
+
+<!-- ============ BOTTOM SHEET: NUEVO / EDITAR FRECUENTE ============ -->
+<div class="sheet-backdrop" id="sheetBackdropFrecuente"></div>
+<div class="sheet" id="sheetFrecuente">
+  <div class="sheet__handle"></div>
+  <h3 class="sheet__title" id="sheetFrecuenteTitulo">Nuevo domicilio frecuente</h3>
+
+  <label class="field">
+    <span>Nombre</span>
+    <input type="text" id="inputFrecNombre" placeholder="Ej: Éxito">
+  </label>
+
+  <label class="field">
+    <span>Valor</span>
+    <input type="number" id="inputFrecValor" placeholder="0" inputmode="numeric">
+  </label>
+
+  <div class="sheet__actions">
+    <button class="btn-ghost" id="btnCancelarFrecuente">Cancelar</button>
+    <button class="btn-primary" id="btnGuardarFrecuente">Guardar</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: CÁLCULO DEL DÍA ============ -->
+<div class="modal-backdrop" id="modalCalculoBackdrop"></div>
+<div class="modal" id="modalCalculo">
+  <h3 class="modal__title">📊 Cálculo del día</h3>
+  <div class="calc-grid">
+    <div class="calc-item"><span>Total ganado</span><strong id="calcTotal">$0</strong></div>
+    <div class="calc-item"><span>Domicilios</span><strong id="calcCantidad">0</strong></div>
+    <div class="calc-item"><span>Promedio</span><strong id="calcPromedio">$0</strong></div>
+    <div class="calc-item"><span>Primer domicilio</span><strong id="calcPrimero">—</strong></div>
+    <div class="calc-item"><span>Último domicilio</span><strong id="calcUltimo">—</strong></div>
+  </div>
+  <button class="btn-primary" id="btnCerrarCalculo">Entendido</button>
+</div>
+
+<!-- ============ MODAL: EDITAR META ============ -->
+<div class="modal-backdrop" id="modalMetaBackdrop"></div>
+<div class="modal" id="modalMeta">
+  <h3 class="modal__title">🎯 Meta semanal</h3>
+  <label class="field">
+    <span>¿Cuánto quieres ganar esta semana?</span>
+    <input type="number" id="inputMeta" placeholder="800000" inputmode="numeric">
+  </label>
+  <div class="sheet__actions">
+    <button class="btn-ghost" id="btnCancelarMeta">Cancelar</button>
+    <button class="btn-primary" id="btnGuardarMeta">Guardar</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: CONFIRMAR ELIMINACIÓN ============ -->
+<div class="modal-backdrop" id="modalConfirmBackdrop"></div>
+<div class="modal modal--confirm" id="modalConfirm">
+  <p class="modal__icon">🗑️</p>
+  <h3 class="modal__title" id="confirmTitulo">¿Eliminar este domicilio?</h3>
+  <p class="modal__sub" id="confirmSub">Esta acción no se puede deshacer.</p>
+  <div class="sheet__actions">
+    <button class="btn-ghost" id="btnCancelarConfirm">Cancelar</button>
+    <button class="btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+  </div>
+</div>
+
+<!-- Toast de confirmación -->
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
