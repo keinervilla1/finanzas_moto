@@ -18,10 +18,7 @@
    archivo firestore.rules.txt incluido en este proyecto).
    ========================================================================= */
 
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyA4zdrYZE0CuPkbqfSeovk88jwdoxHbwYY",
   authDomain: "finanzas-moto.firebaseapp.com",
   projectId: "finanzas-moto",
