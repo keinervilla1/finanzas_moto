@@ -1,0 +1,21 @@
+// =========================================================================
+// REGLAS DE SEGURIDAD DE FIRESTORE
+// =========================================================================
+// Esto NO es un archivo que la app use directamente. Debes copiar este
+// contenido y pegarlo en: Firebase Console → Firestore Database → Reglas
+// (pestaña "Rules"), reemplazando lo que haya ahí, y luego "Publicar".
+//
+// Qué hace: permite que cada usuario autenticado SOLO pueda leer y
+// escribir su propio documento (identificado por su uid). Nadie puede
+// ver ni modificar los datos de otro usuario, ni siquiera si conoce la
+// URL o el proyecto.
+// =========================================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /usuarios/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

@@ -1,16 +1,37 @@
 /* =========================================================================
    DOMI — Control de domicilios para repartidores
    script.js
-   Lógica de datos (localStorage), cálculos diarios/semanales,
-   renderizado de las 4 pantallas y manejo de eventos.
+   Autenticación y datos en la nube con Firebase (Auth + Firestore),
+   cálculos diarios/semanales, renderizado de las 4 pantallas y eventos.
    ========================================================================= */
+
+/* ======================= 0. FIREBASE: INICIALIZACIÓN ===================== */
+
+import { firebaseConfig } from './firebase-config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+import {
+  getAuth, onAuthStateChanged,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut
+} from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+import {
+  initializeFirestore, doc, setDoc, onSnapshot,
+  persistentLocalCache, persistentSingleTabManager
+} from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+
+const firebaseApp = initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
+// Caché local persistente: la app sigue funcionando sin conexión y sincroniza
+// automáticamente en cuanto vuelve el internet.
+const db = initializeFirestore(firebaseApp, {
+  localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
+});
 
 /* ============================ 1. UTILIDADES ============================ */
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
-/** Genera un id único simple */
+/** Genera un id único simple (para identificar entregas/frecuentes dentro del documento) */
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
@@ -65,46 +86,79 @@ function rangoSemanaTexto(monday) {
   return `${monday.getDate()} ${MESES[monday.getMonth()].slice(0,3)} – ${sunday.getDate()} ${MESES[sunday.getMonth()].slice(0,3)}`;
 }
 
-/* ==================== 2. ESTADO Y ALMACENAMIENTO LOCAL ================== */
-
-const STORAGE_KEYS = {
-  entregas: 'domi_entregas',
-  frecuentes: 'domi_frecuentes',
-  meta: 'domi_meta'
-};
-
-const state = {
-  entregas: cargar(STORAGE_KEYS.entregas, []),
-  frecuentes: cargar(STORAGE_KEYS.frecuentes, [
+function frecuentesPorDefecto() {
+  return [
     { id: uid(), nombre: 'Éxito', valor: 6500 },
     { id: uid(), nombre: 'D1', valor: 5000 },
     { id: uid(), nombre: 'Ara', valor: 4800 },
     { id: uid(), nombre: 'Farmatodo', valor: 7000 }
-  ]),
-  meta: cargar(STORAGE_KEYS.meta, 800000)
+  ];
+}
+
+/* ==================== 2. ESTADO Y SINCRONIZACIÓN EN LA NUBE ============== */
+
+/** Estado en memoria; se llena/actualiza con lo que llega de Firestore */
+const state = {
+  entregas: [],
+  frecuentes: [],
+  meta: 800000
 };
 
-function cargar(key, porDefecto) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : porDefecto;
-  } catch (e) {
-    console.warn('No se pudo leer', key, e);
-    return porDefecto;
-  }
+let currentUid = null;
+let unsubscribeSnapshot = null;
+let guardarTimeout = null;
+
+/** Referencia al documento de Firestore del usuario actual */
+function refDocUsuario(uid) {
+  return doc(db, 'usuarios', uid);
 }
 
-function guardar(key, valor) {
-  try {
-    localStorage.setItem(key, JSON.stringify(valor));
-  } catch (e) {
-    console.warn('No se pudo guardar', key, e);
-  }
+/** Se conecta en tiempo real al documento del usuario: cualquier cambio hecho
+ *  desde otro dispositivo llega aquí automáticamente y vuelve a pintar la app. */
+function suscribirseADatos(uid) {
+  if (unsubscribeSnapshot) unsubscribeSnapshot();
+  unsubscribeSnapshot = onSnapshot(
+    refDocUsuario(uid),
+    (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        state.entregas = data.entregas || [];
+        state.frecuentes = data.frecuentes || [];
+        state.meta = data.meta || 800000;
+        renderTodo();
+      } else {
+        // Primera vez que este usuario entra: crear su documento inicial.
+        // El propio setDoc disparará este mismo listener de nuevo con los datos ya creados.
+        setDoc(refDocUsuario(uid), {
+          entregas: [],
+          frecuentes: frecuentesPorDefecto(),
+          meta: 800000
+        });
+      }
+    },
+    (error) => {
+      console.error('Error de sincronización:', error);
+      mostrarToast('Problema de conexión con la nube');
+    }
+  );
 }
 
-function guardarEntregas() { guardar(STORAGE_KEYS.entregas, state.entregas); }
-function guardarFrecuentes() { guardar(STORAGE_KEYS.frecuentes, state.frecuentes); }
-function guardarMeta() { guardar(STORAGE_KEYS.meta, state.meta); }
+/** Guarda el estado completo en Firestore (con un pequeño retraso para
+ *  agrupar cambios rápidos y no saturar de escrituras). */
+function guardarEnNube() {
+  if (!currentUid) return;
+  clearTimeout(guardarTimeout);
+  guardarTimeout = setTimeout(() => {
+    setDoc(refDocUsuario(currentUid), {
+      entregas: state.entregas,
+      frecuentes: state.frecuentes,
+      meta: state.meta
+    }).catch((err) => {
+      console.error(err);
+      mostrarToast('Sin conexión: se guardará cuando vuelva el internet');
+    });
+  }, 250);
+}
 
 /* ========================= 3. CÁLCULOS DERIVADOS ========================= */
 
@@ -185,7 +239,16 @@ const el = {
   confirmTitulo: $('#confirmTitulo'),
   confirmSub: $('#confirmSub'),
 
-  toast: $('#toast')
+  toast: $('#toast'),
+
+  authScreen: $('#authScreen'),
+  appContainer: $('#appContainer'),
+  authEmail: $('#authEmail'),
+  authPassword: $('#authPassword'),
+  authError: $('#authError'),
+  btnAuthPrincipal: $('#btnAuthPrincipal'),
+  btnAuthToggle: $('#btnAuthToggle'),
+  cuentaEmail: $('#cuentaEmail')
 };
 
 /* Variables de edición en curso */
@@ -265,7 +328,7 @@ function crearItemEntrega(entrega) {
       `${entrega.nombre} · ${formatCOP(entrega.valor)}`,
       () => {
         state.entregas = state.entregas.filter(e => e.id !== entrega.id);
-        guardarEntregas();
+        guardarEnNube();
         renderTodo();
         mostrarToast('Domicilio eliminado');
       }
@@ -330,7 +393,7 @@ function renderFrecuentes() {
         `${f.nombre} · ${formatCOP(f.valor)}`,
         () => {
           state.frecuentes = state.frecuentes.filter(x => x.id !== f.id);
-          guardarFrecuentes();
+          guardarEnNube();
           renderTodo();
           mostrarToast('Frecuente eliminado');
         }
@@ -474,7 +537,7 @@ $('#btnGuardarDomicilio').addEventListener('click', () => {
       fecha: toDateKey(new Date())
     });
   }
-  guardarEntregas();
+  guardarEnNube();
   ocultarSheet('sheetDomicilio', 'sheetBackdrop');
   renderTodo();
   animarHero();
@@ -514,7 +577,7 @@ $('#btnGuardarFrecuente').addEventListener('click', () => {
   } else {
     state.frecuentes.push({ id: uid(), nombre, valor });
   }
-  guardarFrecuentes();
+  guardarEnNube();
   ocultarSheet('sheetFrecuente', 'sheetBackdropFrecuente');
   renderTodo();
   mostrarToast('Guardado correctamente');
@@ -554,7 +617,7 @@ $('#btnGuardarMeta').addEventListener('click', () => {
   const valor = Number(el.inputMeta.value);
   if (!valor || valor <= 0) { mostrarToast('Ingresa una meta válida'); return; }
   state.meta = valor;
-  guardarMeta();
+  guardarEnNube();
   ocultarModal('modalMeta', 'modalMetaBackdrop');
   renderTodo();
   mostrarToast('Meta semanal actualizada');
@@ -603,9 +666,99 @@ function mostrarToast(mensaje) {
   toastTimeout = setTimeout(() => el.toast.classList.remove('show'), 2200);
 }
 
-/* ============================ 13. INICIALIZACIÓN ============================= */
+/* ============================ 13. AUTENTICACIÓN ============================ */
 
-renderTodo();
+let modoRegistro = false; // false = iniciar sesión, true = crear cuenta
+
+function actualizarTextosAuth() {
+  el.btnAuthPrincipal.textContent = modoRegistro ? 'Crear cuenta' : 'Iniciar sesión';
+  el.btnAuthToggle.textContent = modoRegistro
+    ? '¿Ya tienes cuenta? Iniciar sesión'
+    : '¿No tienes cuenta? Crear una';
+  el.authError.textContent = '';
+}
+
+el.btnAuthToggle.addEventListener('click', () => {
+  modoRegistro = !modoRegistro;
+  actualizarTextosAuth();
+});
+
+/** Traduce los códigos de error de Firebase a mensajes claros en español */
+function mensajeErrorAuth(codigo) {
+  const mapa = {
+    'auth/invalid-email': 'Ese correo no es válido.',
+    'auth/missing-password': 'Escribe una contraseña.',
+    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+    'auth/email-already-in-use': 'Ya existe una cuenta con ese correo. Intenta iniciar sesión.',
+    'auth/invalid-credential': 'Correo o contraseña incorrectos.',
+    'auth/user-not-found': 'No existe una cuenta con ese correo.',
+    'auth/wrong-password': 'Contraseña incorrecta.',
+    'auth/too-many-requests': 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
+    'auth/network-request-failed': 'Sin conexión a internet. Revisa tu red.'
+  };
+  return mapa[codigo] || 'Ocurrió un error. Inténtalo de nuevo.';
+}
+
+el.btnAuthPrincipal.addEventListener('click', async () => {
+  const email = el.authEmail.value.trim();
+  const password = el.authPassword.value;
+  el.authError.textContent = '';
+
+  if (!email || !password) {
+    el.authError.textContent = 'Completa correo y contraseña.';
+    return;
+  }
+
+  el.btnAuthPrincipal.disabled = true;
+  const textoOriginal = el.btnAuthPrincipal.textContent;
+  el.btnAuthPrincipal.textContent = 'Un momento…';
+
+  try {
+    if (modoRegistro) {
+      await createUserWithEmailAndPassword(auth, email, password);
+    } else {
+      await signInWithEmailAndPassword(auth, email, password);
+    }
+    // onAuthStateChanged se encarga de mostrar la app
+  } catch (err) {
+    el.authError.textContent = mensajeErrorAuth(err.code);
+  } finally {
+    el.btnAuthPrincipal.disabled = false;
+    el.btnAuthPrincipal.textContent = textoOriginal;
+  }
+});
+
+$('#btnCerrarSesion').addEventListener('click', () => {
+  pedirConfirmacion(
+    '¿Cerrar sesión?',
+    'Tus datos seguirán guardados en la nube.',
+    () => signOut(auth)
+  );
+});
+
+/** Punto central: reacciona cuando hay o deja de haber una sesión activa */
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    currentUid = user.uid;
+    el.authScreen.style.display = 'none';
+    el.appContainer.style.display = 'flex';
+    el.cuentaEmail.textContent = user.email;
+    el.authEmail.value = '';
+    el.authPassword.value = '';
+    suscribirseADatos(user.uid);
+  } else {
+    currentUid = null;
+    if (unsubscribeSnapshot) { unsubscribeSnapshot(); unsubscribeSnapshot = null; }
+    state.entregas = [];
+    state.frecuentes = [];
+    state.meta = 800000;
+    el.appContainer.style.display = 'none';
+    el.authScreen.style.display = 'flex';
+    actualizarTextosAuth();
+  }
+});
+
+/* ============================ 14. INICIALIZACIÓN ============================= */
 
 // Refresca automáticamente al pasar la medianoche mientras la app sigue abierta
 let ultimaFechaKey = toDateKey(new Date());
@@ -617,7 +770,7 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-/* ========================= 14. PWA: SERVICE WORKER =========================== */
+/* ========================= 15. PWA: SERVICE WORKER =========================== */
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
