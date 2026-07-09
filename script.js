@@ -35,10 +35,17 @@ const db = initializeFirestore(firebaseApp, {
   localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
 });
 
-// Mantiene la sesión iniciada en este dispositivo aunque se cierre el
-// navegador o la app (hasta que el usuario cierre sesión manualmente).
-setPersistence(auth, browserLocalPersistence).catch(err => console.warn('Persistencia de sesión:', err));
+/* ===================== CONFIGURACIÓN DE AUTENTICACIÓN ===================== */
 
+async function configurarPersistenciaSesion() {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch (error) {
+    console.warn("No fue posible configurar la persistencia de la sesión:", error);
+  }
+}
+
+configurarPersistenciaSesion();
 /* ============================ 1. UTILIDADES ============================ */
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
