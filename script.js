@@ -21,10 +21,18 @@
 import { firebaseConfig } from './firebase-config.js';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
 import {
-  getAuth, onAuthStateChanged, setUserPersistence, browserLocalPersistence,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
-  updateProfile, updateEmail, updatePassword,
-  reauthenticateWithCredential, EmailAuthProvider
+  getAuth,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  updateEmail,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 import {
   initializeFirestore, persistentLocalCache, persistentSingleTabManager,
@@ -42,7 +50,8 @@ const db = initializeFirestore(firebaseApp, {
 });
 
 // Mantiene la sesión iniciada en este dispositivo aunque se cierre el navegador
-setUserPersistence(auth, browserLocalPersistence).catch(err => console.warn('Persistencia de sesión:', err));
+setPersistence(auth, browserLocalPersistence)
+  .catch(err => console.warn('Persistencia de sesión:', err));
 
 /* =========================================================================
    1. CONSTANTES Y CONFIGURACIÓN GLOBAL
