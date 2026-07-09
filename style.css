@@ -438,6 +438,91 @@ ul{ list-style:none; margin:0; padding:0; }
 .account-card__label{ margin:0 0 3px; font-size:11.5px; color:var(--text-400); }
 .account-card__email{ margin:0; font-size:13.5px; font-weight:600; word-break:break-all; }
 
+/* =========================================================
+   INDICADOR DE CARGA GLOBAL
+   ========================================================= */
+.boot-loader{
+  position:fixed; inset:0; z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+  background:var(--bg);
+}
+.boot-loader__spinner{
+  width:38px; height:38px; border-radius:50%;
+  border:4px solid var(--verde-100); border-top-color:var(--verde-600);
+  animation:girar .8s linear infinite;
+}
+.boot-loader__texto{ font-size:13.5px; color:var(--text-400); font-weight:600; }
+@keyframes girar{ to{ transform:rotate(360deg); } }
+
+.sync-bar{
+  position:fixed; top:0; left:50%; transform:translate(-50%, -120%);
+  z-index:90; display:flex; align-items:center; gap:8px;
+  background:var(--verde-900); color:#fff; font-size:12px; font-weight:600;
+  padding:8px 16px; border-radius:0 0 14px 14px;
+  transition:transform .3s ease;
+}
+.sync-bar.show{ transform:translate(-50%, 0); }
+.sync-bar__dot{
+  width:7px; height:7px; border-radius:50%; background:var(--verde-300);
+  animation:pulso 1s ease-in-out infinite;
+}
+@keyframes pulso{ 0%,100%{opacity:.4;} 50%{opacity:1;} }
+
+/* =========================================================
+   CONTROL SEGMENTADO (Normal/Contrata, Sí/No, Efectivo/Transferencia)
+   ========================================================= */
+.field__label{ display:block; font-size:12.5px; font-weight:600; color:var(--text-600); margin:0 0 6px; }
+.segmented{
+  display:flex; background:var(--verde-50); border-radius:var(--radius-sm);
+  padding:4px; margin-bottom:14px; gap:4px;
+}
+.segmented__opt{
+  flex:1; border:none; background:none; cursor:pointer;
+  padding:10px 8px; border-radius:9px; font-size:13.5px; font-weight:600;
+  color:var(--text-600); transition:all .15s ease;
+}
+.segmented__opt.selected{ background:var(--card); color:var(--verde-900); box-shadow:var(--shadow-sm); }
+
+/* =========================================================
+   CHIPS DE FILTRO (Registros / Gastos)
+   ========================================================= */
+.filtro-chips{ margin-bottom:16px; }
+.filtro-chips .chip{ background:var(--card); }
+.filtro-chips .chip.selected{ background:var(--verde-600); color:#fff; border-color:var(--verde-600); }
+
+/* =========================================================
+   VARIANTES DE TARJETAS: alerta / gastos
+   ========================================================= */
+.stat-chip--warn .stat-chip__value{ color:#B45309; }
+.total-semana--warn{ background:#B45309; }
+.total-semana--gastos{ background:var(--card); color:var(--text-900); box-shadow:var(--shadow-sm); margin-top:10px; }
+.total-semana--gastos strong{ color:#DC2626; }
+
+/* Etiquetas pequeñas dentro de items de la lista (tipo, medio de pago, estado) */
+.entrega-item__badges{ display:flex; gap:5px; margin-top:3px; flex-wrap:wrap; }
+.mini-badge{
+  font-size:10px; font-weight:700; padding:2px 7px; border-radius:8px;
+  background:var(--verde-100); color:var(--verde-900);
+}
+.mini-badge--pendiente{ background:#FEF3C7; color:#92400E; }
+.mini-badge--contrata{ background:#DBEAFE; color:#1E40AF; }
+.mini-badge--gasto{ background:var(--rojo-bg); color:var(--rojo); }
+
+/* =========================================================
+   MODAL DE CUENTA / CONFIGURACIÓN
+   ========================================================= */
+.modal--cuenta{ max-height:86vh; overflow-y:auto; text-align:left; }
+.modal--cuenta .modal__title{ text-align:left; }
+.cuenta-row{ display:flex; gap:8px; margin-bottom:14px; }
+.cuenta-row input{
+  flex:1; border:1.5px solid var(--border); background:var(--verde-50);
+  border-radius:var(--radius-sm); padding:12px 14px; font-size:14px; outline:none;
+}
+.btn-ghost--sm{ flex:none; padding:12px 16px; }
+.divider{ border:none; border-top:1px solid var(--border); margin:18px 0; }
+.cuenta-msg{ min-height:18px; font-size:12.5px; font-weight:600; color:var(--verde-700); text-align:center; margin:14px 0 10px; }
+.cuenta-msg.is-error{ color:var(--rojo); }
+
 /* ---------- Utilidades responsive ---------- */
 @media (min-width:461px){
   body{ background:#EAF3EE; }

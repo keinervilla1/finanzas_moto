@@ -24,15 +24,25 @@
 </head>
 <body>
 
+<!-- ============ INDICADOR DE CARGA GLOBAL ============ -->
+<!-- Se muestra mientras arranca la sesión/datos, y como barrita de "sincronizando" -->
+<div class="boot-loader" id="bootLoader">
+  <div class="boot-loader__spinner"></div>
+  <p class="boot-loader__texto">Cargando Domi…</p>
+</div>
+<div class="sync-bar" id="syncBar"><span class="sync-bar__dot"></span> Sincronizando…</div>
+
 <!-- ============ PANTALLA DE INICIO DE SESIÓN ============ -->
-<!-- Se muestra mientras no haya una sesión activa. script.js la oculta
-     automáticamente en cuanto Firebase confirma que el usuario inició sesión. -->
-<div class="auth-screen" id="authScreen">
+<div class="auth-screen" id="authScreen" style="display:none">
   <div class="auth-card">
     <div class="auth-logo">🛵</div>
     <h1 class="auth-title">Domi</h1>
     <p class="auth-sub">Tus domicilios y ganancias, sincronizados en todos tus dispositivos.</p>
 
+    <label class="field" id="campoAuthNombre" style="display:none">
+      <span>¿Cómo te llamas?</span>
+      <input type="text" id="authNombre" placeholder="Ej: Keiner" autocomplete="name">
+    </label>
     <label class="field">
       <span>Correo electrónico</span>
       <input type="email" id="authEmail" placeholder="tucorreo@ejemplo.com" autocomplete="email">
@@ -57,7 +67,7 @@
     <div class="topbar__brand">
       <span class="topbar__logo">🛵</span>
       <div>
-        <p class="topbar__title" id="screenTitle">Hoy</p>
+        <p class="topbar__title" id="saludoUsuario">Hola 👋</p>
         <p class="topbar__date" id="fechaActual">—</p>
       </div>
     </div>
@@ -76,12 +86,12 @@
     <!-- ===================== PANTALLA: INICIO ===================== -->
     <section class="screen active" id="screen-inicio">
 
-      <!-- Tarjeta hero: ganancia del día en vivo + anillo de meta -->
+      <!-- Tarjeta hero: ganancia real del día en vivo + anillo de meta -->
       <div class="card hero">
         <div class="hero__info">
-          <p class="hero__label">Ganancia de hoy</p>
+          <p class="hero__label">Ganancia neta de hoy</p>
           <p class="hero__value" id="gananciaHoy">$0</p>
-          <p class="hero__sub"><span id="cantidadHoy">0</span> domicilios realizados</p>
+          <p class="hero__sub"><span id="cantidadHoy">0</span> domicilios · <span id="gastosHoyMini">$0</span> en gastos</p>
         </div>
         <div class="hero__ring">
           <svg width="86" height="86" viewBox="0 0 86 86">
@@ -98,9 +108,9 @@
           <p class="stat-chip__value" id="gananciaSemanaMini">$0</p>
           <p class="stat-chip__label">Esta semana</p>
         </div>
-        <div class="stat-chip">
-          <p class="stat-chip__value" id="promedioHoyMini">$0</p>
-          <p class="stat-chip__label">Promedio/domicilio</p>
+        <div class="stat-chip stat-chip--warn" id="chipDeben">
+          <p class="stat-chip__value" id="totalDebenMini">$0</p>
+          <p class="stat-chip__label">Te deben</p>
         </div>
       </div>
 
@@ -157,9 +167,74 @@
       <ul class="dias-list" id="listaDias"><!-- JS --></ul>
 
       <div class="card total-semana">
-        <span>Total de la semana</span>
+        <span>Ingresos de la semana</span>
         <strong id="totalSemana">$0</strong>
       </div>
+      <div class="card total-semana total-semana--gastos">
+        <span>Gastos de la semana</span>
+        <strong id="totalGastosSemana">$0</strong>
+      </div>
+
+      <div class="section-head">
+        <h2>Semanas anteriores</h2>
+      </div>
+      <ul class="historial-list" id="listaHistorial"><!-- JS --></ul>
+      <p class="empty-state" id="emptyHistorial">Todavía no hay semanas anteriores registradas.</p>
+    </section>
+
+    <!-- ===================== PANTALLA: REGISTROS (historial detallado) ===================== -->
+    <section class="screen" id="screen-registros">
+      <div class="section-head" style="margin-top:4px">
+        <h2>Todos tus domicilios</h2>
+      </div>
+
+      <div class="chips filtro-chips" id="filtrosRegistros">
+        <button class="chip selected" data-rango="semana">Esta semana</button>
+        <button class="chip" data-rango="mes">Este mes</button>
+        <button class="chip" data-rango="3meses">Últimos 3 meses</button>
+        <button class="chip" data-rango="todo">Todo</button>
+      </div>
+
+      <ul class="entregas-list" id="listaRegistros"><!-- JS --></ul>
+      <p class="empty-state" id="emptyRegistros">No hay domicilios en este rango.</p>
+      <button class="btn-secondary" id="btnCargarMasRegistros" style="display:none">Cargar más</button>
+    </section>
+
+    <!-- ===================== PANTALLA: DEBEN ===================== -->
+    <section class="screen" id="screen-deben">
+      <div class="card total-semana total-semana--warn">
+        <span>Total que te deben</span>
+        <strong id="totalDebenHeader">$0</strong>
+      </div>
+      <div class="section-head" style="margin-top:4px">
+        <h2>Pendientes de pago</h2>
+        <span class="pill" id="badgeDeben">0</span>
+      </div>
+      <ul class="entregas-list" id="listaDeben"><!-- JS --></ul>
+      <p class="empty-state" id="emptyDeben">No tienes deudas pendientes por cobrar 🎉</p>
+    </section>
+
+    <!-- ===================== PANTALLA: GASTOS ===================== -->
+    <section class="screen" id="screen-gastos">
+      <button class="link-btn" id="btnVolverGastos" style="margin-bottom:8px">← Volver</button>
+      <button class="btn-primary btn-big" id="btnAgregarGasto">
+        <span class="btn-big__icon">＋</span> Registrar gasto
+      </button>
+
+      <div class="chips filtro-chips" id="filtrosGastos">
+        <button class="chip selected" data-rango="hoy">Hoy</button>
+        <button class="chip" data-rango="semana">Semana</button>
+        <button class="chip" data-rango="mes">Mes</button>
+        <button class="chip" data-rango="todo">Todo</button>
+      </div>
+
+      <div class="card total-semana total-semana--gastos">
+        <span>Total del período</span>
+        <strong id="totalGastosFiltro">$0</strong>
+      </div>
+
+      <ul class="entregas-list" id="listaGastos"><!-- JS --></ul>
+      <p class="empty-state" id="emptyGastos">No hay gastos registrados en este período.</p>
     </section>
 
     <!-- ===================== PANTALLA: FRECUENTES ===================== -->
@@ -171,23 +246,23 @@
       <p class="hint">Créalos una vez y selecciónalos rápido al agregar un domicilio.</p>
       <ul class="frecuentes-list" id="listaFrecuentes"><!-- JS --></ul>
       <p class="empty-state" id="emptyFrecuentes">No tienes domicilios frecuentes todavía.</p>
-    </section>
 
-    <!-- ===================== PANTALLA: HISTORIAL ===================== -->
-    <section class="screen" id="screen-historial">
-      <div class="section-head" style="margin-top:4px">
-        <h2>Semanas anteriores</h2>
+      <div class="section-head">
+        <h2>Otras secciones</h2>
       </div>
-      <ul class="historial-list" id="listaHistorial"><!-- JS --></ul>
-      <p class="empty-state" id="emptyHistorial">Todavía no hay semanas anteriores registradas.</p>
+      <button class="btn-secondary" id="btnIrAGastos">💸 Gastos</button>
 
+      <div class="section-head">
+        <h2>Cuenta</h2>
+      </div>
       <div class="card account-card">
         <div>
           <p class="account-card__label">Sesión iniciada como</p>
           <p class="account-card__email" id="cuentaEmail">—</p>
         </div>
-        <button class="link-btn" id="btnCerrarSesion">Cerrar sesión</button>
       </div>
+      <button class="btn-secondary" id="btnEditarCuenta">⚙️ Configuración de cuenta</button>
+      <button class="btn-secondary" id="btnCerrarSesion">Cerrar sesión</button>
     </section>
 
   </main>
@@ -202,13 +277,17 @@
       <svg viewBox="0 0 24 24"><path d="M4 10h16M7 3v4M17 3v4M6 6h12a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z"/></svg>
       <span>Semana</span>
     </button>
+    <button class="tabbar__item" data-screen="registros">
+      <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 1-7.4 5M4 4v5h5M12 8v5l4 2"/></svg>
+      <span>Registros</span>
+    </button>
+    <button class="tabbar__item" data-screen="deben">
+      <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5.5c0-1.9-2.2-3.5-5-3.5S7 3.6 7 5.5 9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5"/></svg>
+      <span>Deben</span>
+    </button>
     <button class="tabbar__item" data-screen="frecuentes">
       <svg viewBox="0 0 24 24"><path d="M20 7h-3.2l-1.6-2.4A2 2 0 0 0 13.5 3.6h-3a2 2 0 0 0-1.7 1L7.2 7H4a1 1 0 0 0 0 2h1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9h1a1 1 0 0 0 0-2ZM12 17a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>
-      <span>Frecuentes</span>
-    </button>
-    <button class="tabbar__item" data-screen="historial">
-      <svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 1-7.4 5M4 4v5h5M12 8v5l4 2"/></svg>
-      <span>Historial</span>
+      <span>Más</span>
     </button>
   </nav>
 </div>
@@ -222,18 +301,43 @@
   <div class="chips" id="chipsFrecuentes"><!-- JS --></div>
 
   <label class="field">
-    <span>Nombre del domicilio</span>
+    <span>Cliente / nombre del domicilio</span>
     <input type="text" id="inputNombre" placeholder="Ej: Éxito, D1, Farmatodo…">
   </label>
 
   <label class="field">
-    <span>Valor ganado</span>
+    <span>Valor acordado</span>
     <input type="number" id="inputValor" placeholder="0" inputmode="numeric">
   </label>
 
   <label class="field">
     <span>Hora</span>
     <input type="time" id="inputHora">
+  </label>
+
+  <span class="field__label">Tipo de domicilio</span>
+  <div class="segmented" id="segmentoTipo">
+    <button type="button" class="segmented__opt selected" data-valor="normal">Normal</button>
+    <button type="button" class="segmented__opt" data-valor="contrata">Contrata</button>
+  </div>
+
+  <span class="field__label">¿Se pagó inmediatamente?</span>
+  <div class="segmented" id="segmentoPagado">
+    <button type="button" class="segmented__opt selected" data-valor="si">Sí</button>
+    <button type="button" class="segmented__opt" data-valor="no">No</button>
+  </div>
+
+  <div id="bloqueMedioPago">
+    <span class="field__label">Medio de pago</span>
+    <div class="segmented" id="segmentoMedioPago">
+      <button type="button" class="segmented__opt selected" data-valor="efectivo">Efectivo</button>
+      <button type="button" class="segmented__opt" data-valor="transferencia">Transferencia</button>
+    </div>
+  </div>
+
+  <label class="field" id="campoDescripcion" style="display:none">
+    <span>Observación (opcional)</span>
+    <input type="text" id="inputDescripcion" placeholder="Ej: paga el viernes al cierre">
   </label>
 
   <div class="sheet__actions">
@@ -264,12 +368,81 @@
   </div>
 </div>
 
+<!-- ============ BOTTOM SHEET: AGREGAR / EDITAR GASTO ============ -->
+<div class="sheet-backdrop" id="sheetBackdropGasto"></div>
+<div class="sheet" id="sheetGasto">
+  <div class="sheet__handle"></div>
+  <h3 class="sheet__title" id="sheetGastoTitulo">Registrar gasto</h3>
+
+  <span class="field__label">Categoría</span>
+  <div class="chips" id="chipsCategoriaGasto">
+    <button type="button" class="chip selected" data-valor="gasolina">⛽ Gasolina</button>
+    <button type="button" class="chip" data-valor="comida">🍽️ Comida</button>
+    <button type="button" class="chip" data-valor="mantenimiento">🔧 Mantenimiento</button>
+    <button type="button" class="chip" data-valor="peajes">🛣️ Peajes</button>
+    <button type="button" class="chip" data-valor="otros">📦 Otros</button>
+  </div>
+
+  <label class="field">
+    <span>Valor</span>
+    <input type="number" id="inputGastoValor" placeholder="0" inputmode="numeric">
+  </label>
+
+  <label class="field">
+    <span>Descripción (opcional)</span>
+    <input type="text" id="inputGastoDescripcion" placeholder="Ej: tanqueada en Terpel">
+  </label>
+
+  <label class="field">
+    <span>Fecha</span>
+    <input type="date" id="inputGastoFecha">
+  </label>
+
+  <div class="sheet__actions">
+    <button class="btn-ghost" id="btnCancelarGasto">Cancelar</button>
+    <button class="btn-primary" id="btnGuardarGasto">Guardar</button>
+  </div>
+</div>
+
+<!-- ============ SHEET: MARCAR DEUDA COMO PAGADA ============ -->
+<div class="sheet-backdrop" id="sheetBackdropPago"></div>
+<div class="sheet" id="sheetPago">
+  <div class="sheet__handle"></div>
+  <h3 class="sheet__title">Marcar como pagado</h3>
+  <p class="hint" id="pagoResumen">—</p>
+
+  <span class="field__label">Medio de pago</span>
+  <div class="segmented" id="segmentoMedioPagoConfirmar">
+    <button type="button" class="segmented__opt selected" data-valor="efectivo">Efectivo</button>
+    <button type="button" class="segmented__opt" data-valor="transferencia">Transferencia</button>
+  </div>
+  <p class="hint">Se contabilizará como ingreso el día de hoy.</p>
+
+  <div class="sheet__actions">
+    <button class="btn-ghost" id="btnCancelarPago">Cancelar</button>
+    <button class="btn-primary" id="btnConfirmarPago">Confirmar pago</button>
+  </div>
+</div>
+
+<!-- ============ MODAL: DETALLE DE UN DOMICILIO ============ -->
+<div class="modal-backdrop" id="modalDetalleBackdrop"></div>
+<div class="modal" id="modalDetalle">
+  <h3 class="modal__title">📦 Detalle del domicilio</h3>
+  <div class="calc-grid" id="detalleContenido"><!-- JS --></div>
+  <div class="sheet__actions">
+    <button class="btn-ghost" id="btnEditarDesdeDetalle">Editar</button>
+    <button class="btn-primary" id="btnCerrarDetalle">Cerrar</button>
+  </div>
+</div>
+
 <!-- ============ MODAL: CÁLCULO DEL DÍA ============ -->
 <div class="modal-backdrop" id="modalCalculoBackdrop"></div>
 <div class="modal" id="modalCalculo">
   <h3 class="modal__title">📊 Cálculo del día</h3>
   <div class="calc-grid">
-    <div class="calc-item"><span>Total ganado</span><strong id="calcTotal">$0</strong></div>
+    <div class="calc-item"><span>Ingresos reales</span><strong id="calcTotal">$0</strong></div>
+    <div class="calc-item"><span>Gastos del día</span><strong id="calcGastos">$0</strong></div>
+    <div class="calc-item"><span>Ganancia neta</span><strong id="calcNeta">$0</strong></div>
     <div class="calc-item"><span>Domicilios</span><strong id="calcCantidad">0</strong></div>
     <div class="calc-item"><span>Promedio</span><strong id="calcPromedio">$0</strong></div>
     <div class="calc-item"><span>Primer domicilio</span><strong id="calcPrimero">—</strong></div>
@@ -292,10 +465,51 @@
   </div>
 </div>
 
-<!-- ============ MODAL: CONFIRMAR ELIMINACIÓN ============ -->
+<!-- ============ MODAL: CONFIGURACIÓN DE CUENTA ============ -->
+<div class="modal-backdrop" id="modalCuentaBackdrop"></div>
+<div class="modal modal--cuenta" id="modalCuenta">
+  <h3 class="modal__title">⚙️ Configuración de cuenta</h3>
+
+  <span class="field__label">Nombre para mostrar</span>
+  <div class="cuenta-row">
+    <input type="text" id="inputCuentaNombre" placeholder="Tu nombre">
+    <button class="btn-ghost btn-ghost--sm" id="btnGuardarNombre">Guardar</button>
+  </div>
+
+  <hr class="divider">
+
+  <span class="field__label">Cambiar correo electrónico</span>
+  <label class="field">
+    <span>Nuevo correo</span>
+    <input type="email" id="inputCuentaNuevoCorreo" placeholder="nuevo@correo.com">
+  </label>
+  <label class="field">
+    <span>Contraseña actual</span>
+    <input type="password" id="inputCuentaPasswordCorreo" placeholder="Para confirmar">
+  </label>
+  <button class="btn-ghost" id="btnCambiarCorreo">Actualizar correo</button>
+
+  <hr class="divider">
+
+  <span class="field__label">Cambiar contraseña</span>
+  <label class="field">
+    <span>Nueva contraseña</span>
+    <input type="password" id="inputCuentaNuevaPassword" placeholder="Mínimo 6 caracteres">
+  </label>
+  <label class="field">
+    <span>Contraseña actual</span>
+    <input type="password" id="inputCuentaPasswordActual" placeholder="Para confirmar">
+  </label>
+  <button class="btn-ghost" id="btnCambiarPassword">Actualizar contraseña</button>
+
+  <p class="cuenta-msg" id="cuentaMsg"></p>
+  <button class="btn-primary" id="btnCerrarModalCuenta">Cerrar</button>
+</div>
+
+<!-- ============ MODAL: CONFIRMAR ELIMINACIÓN / ACCIÓN GENÉRICA ============ -->
 <div class="modal-backdrop" id="modalConfirmBackdrop"></div>
 <div class="modal modal--confirm" id="modalConfirm">
-  <p class="modal__icon">🗑️</p>
+  <p class="modal__icon" id="confirmIcono">🗑️</p>
   <h3 class="modal__title" id="confirmTitulo">¿Eliminar este domicilio?</h3>
   <p class="modal__sub" id="confirmSub">Esta acción no se puede deshacer.</p>
   <div class="sheet__actions">
