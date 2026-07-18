@@ -237,24 +237,10 @@
       <p class="empty-state" id="emptyGastos">No hay gastos registrados en este período.</p>
     </section>
 
-    <!-- ===================== PANTALLA: FRECUENTES ===================== -->
+    <!-- ===================== PANTALLA: FRECUENTES / MÁS ===================== -->
     <section class="screen" id="screen-frecuentes">
-      <div class="section-head" style="margin-top:4px">
-        <h2>Domicilios frecuentes</h2>
-        <button class="link-btn" id="btnNuevoFrecuente">+ Nuevo</button>
-      </div>
-      <p class="hint">Créalos una vez y selecciónalos rápido al agregar un domicilio.</p>
-      <ul class="frecuentes-list" id="listaFrecuentes"><!-- JS --></ul>
-      <p class="empty-state" id="emptyFrecuentes">No tienes domicilios frecuentes todavía.</p>
 
-      <div class="section-head">
-        <h2>Otras secciones</h2>
-      </div>
-      <button class="btn-secondary" id="btnIrAGastos">💸 Gastos</button>
-
-      <div class="section-head">
-        <h2>Cuenta</h2>
-      </div>
+      <div class="section-head" style="margin-top:4px"><h2>Cuenta</h2></div>
       <div class="card account-card">
         <div>
           <p class="account-card__label">Sesión iniciada como</p>
@@ -263,6 +249,23 @@
       </div>
       <button class="btn-secondary" id="btnEditarCuenta">⚙️ Configuración de cuenta</button>
       <button class="btn-secondary" id="btnCerrarSesion">Cerrar sesión</button>
+
+      <div class="section-head"><h2>Datos</h2></div>
+      <div class="section-head" style="margin-top:0">
+        <h3 class="subsection-title">Domicilios frecuentes</h3>
+        <button class="link-btn" id="btnNuevoFrecuente">+ Nuevo</button>
+      </div>
+      <p class="hint">Créalos una vez y selecciónalos rápido al agregar un domicilio.</p>
+      <ul class="frecuentes-list" id="listaFrecuentes"><!-- JS --></ul>
+      <p class="empty-state" id="emptyFrecuentes">No tienes domicilios frecuentes todavía.</p>
+
+      <div class="section-head"><h2>Herramientas</h2></div>
+      <button class="btn-secondary" id="btnIrAGastos">💸 Gastos</button>
+
+      <div class="section-head"><h2>Aplicación</h2></div>
+      <button class="btn-secondary" id="btnEditarMetaDesdeMas">🎯 Meta semanal</button>
+      <p class="app-version">Domi v1.5</p>
+
     </section>
 
   </main>

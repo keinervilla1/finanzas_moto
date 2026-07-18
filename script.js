@@ -120,6 +120,39 @@ function escapeHTML(str) {
   return div.innerHTML;
 }
 
+/* ================== 1.5 PROTECCIÓN CONTRA DOBLE ENVÍO (reutilizable) ======= */
+/* Un solo helper para TODOS los botones que guardan algo (domicilio, gasto,
+   frecuente, meta, pago, login, cuenta...). Evita duplicar la misma lógica de
+   "deshabilitar → mostrar texto de carga → ejecutar → restaurar" en cada sitio. */
+
+async function conProteccionDoble(boton, accionAsync, textoCargando = 'Guardando…') {
+  if (!boton || boton.disabled) return; // ya está procesando: ignoramos el clic repetido
+  const textoOriginal = boton.textContent;
+  boton.disabled = true;
+  boton.textContent = textoCargando;
+  try {
+    await accionAsync();
+  } finally {
+    boton.disabled = false;
+    boton.textContent = textoOriginal;
+  }
+}
+
+/** Junta varias llamadas seguidas a renderTodo() (por ejemplo cuando llegan
+ *  5 snapshots casi al mismo tiempo al iniciar sesión) en un solo repintado. */
+let renderTodoPendiente = false;
+function solicitarRenderTodo() {
+  if (renderTodoPendiente) return;
+  renderTodoPendiente = true;
+  queueMicrotask(() => { renderTodoPendiente = false; renderTodo(); });
+}
+
+/** Empate estable para ordenar dos registros creados en el mismo minuto
+ *  (misma "hora"): usamos el instante real de creación en el servidor. */
+function tiempoCreacion(e) {
+  return e.creadoEn && typeof e.creadoEn.toMillis === 'function' ? e.creadoEn.toMillis() : 0;
+}
+
 /* ==================== 2. ESTADO EN MEMORIA ============== */
 
 /** Datos "activos" (en tiempo real): semana actual + deudas pendientes + perfil */
@@ -212,7 +245,7 @@ function suscribirsePerfil(uid) {
     }
     migracionHecha = true;
 
-    renderTodo();
+    solicitarRenderTodo();
     ocultarLoaderInicial();
   }, (err) => { console.error(err); mostrarToast('Error al cargar tu perfil'); ocultarLoaderInicial(); });
 }
@@ -224,7 +257,7 @@ function suscribirseEntregasSemana(uid, monday) {
   const q = query(coleccion(uid, 'entregas'), where('fecha', '>=', inicio), where('fecha', '<=', fin), orderBy('fecha'));
   unsubs.entregasSemana = onSnapshot(q, (snap) => {
     mezclarEntregas(snap.docs.map(mapDoc));
-    renderTodo();
+    solicitarRenderTodo();
     ocultarLoaderInicial();
   }, (err) => console.error(err));
 }
@@ -236,7 +269,7 @@ function suscribirseEntregasPagadasEnSemana(uid, monday) {
   const q = query(coleccion(uid, 'entregas'), where('pagado', '==', true), where('fechaPago', '>=', inicio), where('fechaPago', '<=', fin));
   unsubs.entregasPagadasSemana = onSnapshot(q, (snap) => {
     mezclarEntregas(snap.docs.map(mapDoc));
-    renderTodo();
+    solicitarRenderTodo();
   }, (err) => {
     // Si Firebase pide crear un índice compuesto la primera vez, lo avisamos
     // de forma amigable en vez de dejar la consola en silencio.
@@ -258,7 +291,7 @@ function suscribirseGastosSemana(uid, monday) {
   const q = query(coleccion(uid, 'gastos'), where('fecha', '>=', inicio), where('fecha', '<=', fin), orderBy('fecha'));
   unsubs.gastosSemana = onSnapshot(q, (snap) => {
     state.gastos = snap.docs.map(mapDoc);
-    renderTodo();
+    solicitarRenderTodo();
   }, (err) => console.error(err));
 }
 
@@ -267,7 +300,7 @@ function suscribirseDeudas(uid) {
   const q = query(coleccion(uid, 'entregas'), where('pagado', '==', false));
   unsubs.deudas = onSnapshot(q, (snap) => {
     state.deudas = snap.docs.map(mapDoc).sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
-    renderTodo();
+    solicitarRenderTodo();
   }, (err) => console.error(err));
 }
 
@@ -303,8 +336,18 @@ function guardarPerfilEnNube() {
 
 /* ========================= 6. CÁLCULOS DERIVADOS ========================= */
 
+/** Domicilios de HOY en orden cronológico (el primero realizado va primero).
+ *  Se ordena por hora y, si dos quedaron con la misma hora (p. ej. se
+ *  agregaron varios sin cambiar el reloj), se desempata por el instante
+ *  real en que se guardaron — así el orden siempre refleja el recorrido
+ *  del día tal como ocurrió. */
 function entregasRealizadasEn(fechaKey) {
-  return state.entregas.filter(e => e.fecha === fechaKey).sort((a, b) => a.hora.localeCompare(b.hora));
+  return state.entregas
+    .filter(e => e.fecha === fechaKey)
+    .sort((a, b) => {
+      const porHora = a.hora.localeCompare(b.hora);
+      return porHora !== 0 ? porHora : tiempoCreacion(a) - tiempoCreacion(b);
+    });
 }
 function entregasPagadasEl(fechaKey) {
   return state.entregas.filter(e => e.pagado && e.fechaPago === fechaKey);
@@ -329,20 +372,27 @@ function totalesPorDia(monday) {
 
 const $ = sel => document.querySelector(sel);
 
-const TITULOS = { inicio: 'Hoy', semana: 'Semana', registros: 'Registros', deben: 'Deben', frecuentes: 'Más' };
+const CLAVE_ULTIMA_PESTANA = 'domi_ultima_pestana';
+
+/** Cambia de pestaña y recuerda cuál quedó activa (solo la navegación, nunca
+ *  formularios/sheets abiertos) para restaurarla la próxima vez que se abra
+ *  la app. Se reutiliza tanto para los clics del usuario como para la
+ *  restauración automática al iniciar sesión — así no hay lógica duplicada. */
+function irAPestana(screen) {
+  const pantalla = document.getElementById('screen-' + screen);
+  if (!pantalla) return; // pestaña desconocida (dato viejo en localStorage, por ejemplo)
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  pantalla.classList.add('active');
+  document.querySelectorAll('.tabbar__item').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+  document.getElementById('screens').scrollTop = 0;
+  localStorage.setItem(CLAVE_ULTIMA_PESTANA, screen);
+
+  if (screen === 'registros' && registros.items.length === 0) cargarRegistros(true);
+  if (screen === 'semana' && !historialSemanas.cargado) cargarHistorialSemanas();
+}
 
 document.querySelectorAll('.tabbar__item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const screen = btn.dataset.screen;
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-    document.getElementById('screen-' + screen).classList.add('active');
-    document.querySelectorAll('.tabbar__item').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('screens').scrollTop = 0;
-    if (screen === 'registros' && registros.items.length === 0) cargarRegistros(true);
-    if (screen === 'gastos') cargarGastosVista();
-    if (screen === 'semana' && !historialSemanas.cargado) cargarHistorialSemanas();
-  });
+  btn.addEventListener('click', () => irAPestana(btn.dataset.screen));
 });
 
 const el = {
@@ -534,7 +584,7 @@ function crearItemEntrega(entrega, opciones = {}) {
         await eliminarDocumento('entregas', entrega.id);
         mapaEntregasSemana.delete(entrega.id);
         state.entregas = state.entregas.filter(e => e.id !== entrega.id);
-        renderTodo();
+        solicitarRenderTodo();
         mostrarToast('Domicilio eliminado');
       }, '🗑️');
     });
@@ -594,7 +644,7 @@ function renderFrecuentes() {
       pedirConfirmacion('¿Eliminar este frecuente?', `${f.nombre} · ${formatCOP(f.valor)}`, () => {
         state.frecuentes = state.frecuentes.filter(x => x.id !== f.id);
         guardarPerfilEnNube();
-        renderTodo();
+        solicitarRenderTodo();
         mostrarToast('Frecuente eliminado');
       });
     });
@@ -726,7 +776,11 @@ async function cargarRegistros(reiniciar) {
 function renderRegistros() {
   el.listaRegistros.innerHTML = '';
   registros.items
-    .sort((a, b) => (a.fecha === b.fecha ? b.hora.localeCompare(a.hora) : (a.fecha < b.fecha ? 1 : -1)))
+    .sort((a, b) => {
+      if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
+      const porHora = b.hora.localeCompare(a.hora);
+      return porHora !== 0 ? porHora : tiempoCreacion(b) - tiempoCreacion(a);
+    })
     .forEach(e => el.listaRegistros.appendChild(crearItemEntrega(e, { onClick: abrirModalDetalle })));
   el.btnCargarMasRegistros.style.display = registros.hasMore ? 'block' : 'none';
 }
@@ -795,7 +849,7 @@ function renderGastos() {
         gastosVista.items = gastosVista.items.filter(x => x.id !== g.id);
         state.gastos = state.gastos.filter(x => x.id !== g.id);
         renderGastos();
-        renderTodo();
+        solicitarRenderTodo();
         mostrarToast('Gasto eliminado');
       }, '🗑️');
     });
@@ -885,7 +939,7 @@ $('#btnAgregarDomicilio').addEventListener('click', () => abrirSheetEntrega(null
 $('#btnCancelarDomicilio').addEventListener('click', () => ocultarSheet('sheetDomicilio', 'sheetBackdrop'));
 $('#sheetBackdrop').addEventListener('click', () => ocultarSheet('sheetDomicilio', 'sheetBackdrop'));
 
-$('#btnGuardarDomicilio').addEventListener('click', async () => {
+$('#btnGuardarDomicilio').addEventListener('click', () => conProteccionDoble($('#btnGuardarDomicilio'), async () => {
   const nombre = el.inputNombre.value.trim();
   const valor = Number(el.inputValor.value);
   const hora = el.inputHora.value;
@@ -921,7 +975,7 @@ $('#btnGuardarDomicilio').addEventListener('click', async () => {
     console.error(err);
     mostrarToast('No se pudo guardar. Revisa tu conexión.');
   }
-});
+}));
 
 function animarHero() {
   el.gananciaHoy.classList.remove('bump');
@@ -942,7 +996,7 @@ $('#btnNuevoFrecuente').addEventListener('click', () => abrirSheetFrecuente(null
 $('#btnCancelarFrecuente').addEventListener('click', () => ocultarSheet('sheetFrecuente', 'sheetBackdropFrecuente'));
 $('#sheetBackdropFrecuente').addEventListener('click', () => ocultarSheet('sheetFrecuente', 'sheetBackdropFrecuente'));
 
-$('#btnGuardarFrecuente').addEventListener('click', () => {
+$('#btnGuardarFrecuente').addEventListener('click', () => conProteccionDoble($('#btnGuardarFrecuente'), async () => {
   const nombre = el.inputFrecNombre.value.trim();
   const valor = Number(el.inputFrecValor.value);
   if (!nombre) { mostrarToast('Escribe el nombre'); return; }
@@ -954,11 +1008,11 @@ $('#btnGuardarFrecuente').addEventListener('click', () => {
   } else {
     state.frecuentes.push({ id: uid(), nombre, valor });
   }
-  guardarPerfilEnNube();
+  await guardarPerfilEnNube();
   ocultarSheet('sheetFrecuente', 'sheetBackdropFrecuente');
-  renderTodo();
+  solicitarRenderTodo();
   mostrarToast('Guardado correctamente');
-});
+}));
 
 $('#btnIrAGastos').addEventListener('click', () => {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -996,7 +1050,7 @@ $('#btnAgregarGasto').addEventListener('click', () => abrirSheetGasto(null));
 $('#btnCancelarGasto').addEventListener('click', () => ocultarSheet('sheetGasto', 'sheetBackdropGasto'));
 $('#sheetBackdropGasto').addEventListener('click', () => ocultarSheet('sheetGasto', 'sheetBackdropGasto'));
 
-$('#btnGuardarGasto').addEventListener('click', async () => {
+$('#btnGuardarGasto').addEventListener('click', () => conProteccionDoble($('#btnGuardarGasto'), async () => {
   const valor = Number(el.inputGastoValor.value);
   const descripcion = el.inputGastoDescripcion.value.trim();
   const fecha = el.inputGastoFecha.value || toDateKey(new Date());
@@ -1017,7 +1071,7 @@ $('#btnGuardarGasto').addEventListener('click', async () => {
     console.error(err);
     mostrarToast('No se pudo guardar el gasto');
   }
-});
+}));
 
 /* ==================== 12. SHEET: MARCAR DEUDA COMO PAGADA ==================== */
 
@@ -1035,7 +1089,7 @@ function abrirSheetPago(entrega) {
 $('#btnCancelarPago').addEventListener('click', () => ocultarSheet('sheetPago', 'sheetBackdropPago'));
 $('#sheetBackdropPago').addEventListener('click', () => ocultarSheet('sheetPago', 'sheetBackdropPago'));
 
-$('#btnConfirmarPago').addEventListener('click', async () => {
+$('#btnConfirmarPago').addEventListener('click', () => conProteccionDoble($('#btnConfirmarPago'), async () => {
   if (!entregaParaPago) return;
   try {
     await actualizarDocumento('entregas', entregaParaPago.id, {
@@ -1050,7 +1104,7 @@ $('#btnConfirmarPago').addEventListener('click', async () => {
     console.error(err);
     mostrarToast('No se pudo registrar el pago');
   }
-});
+}, 'Registrando…'));
 
 /* ==================== 13. MODAL: DETALLE DE UN DOMICILIO ===================== */
 
@@ -1108,18 +1162,19 @@ function abrirModalMeta() {
 }
 $('#btnAbrirMeta').addEventListener('click', abrirModalMeta);
 $('#btnEditarMeta').addEventListener('click', abrirModalMeta);
+$('#btnEditarMetaDesdeMas').addEventListener('click', abrirModalMeta);
 $('#btnCancelarMeta').addEventListener('click', () => ocultarModal('modalMeta', 'modalMetaBackdrop'));
 $('#modalMetaBackdrop').addEventListener('click', () => ocultarModal('modalMeta', 'modalMetaBackdrop'));
 
-$('#btnGuardarMeta').addEventListener('click', () => {
+$('#btnGuardarMeta').addEventListener('click', () => conProteccionDoble($('#btnGuardarMeta'), async () => {
   const valor = Number(el.inputMeta.value);
   if (!valor || valor <= 0) { mostrarToast('Ingresa una meta válida'); return; }
   state.meta = valor;
-  guardarPerfilEnNube();
+  await guardarPerfilEnNube();
   ocultarModal('modalMeta', 'modalMetaBackdrop');
-  renderTodo();
+  solicitarRenderTodo();
   mostrarToast('Meta semanal actualizada');
-});
+}));
 
 /* ======================= 16. MODAL: CONFIRMAR (genérico) ===================== */
 
@@ -1132,11 +1187,11 @@ function pedirConfirmacion(titulo, sub, callback, icono) {
 }
 $('#btnCancelarConfirm').addEventListener('click', () => ocultarModal('modalConfirm', 'modalConfirmBackdrop'));
 $('#modalConfirmBackdrop').addEventListener('click', () => ocultarModal('modalConfirm', 'modalConfirmBackdrop'));
-$('#btnConfirmarEliminar').addEventListener('click', async () => {
+$('#btnConfirmarEliminar').addEventListener('click', () => conProteccionDoble($('#btnConfirmarEliminar'), async () => {
   if (confirmCallback) await confirmCallback();
   confirmCallback = null;
   ocultarModal('modalConfirm', 'modalConfirmBackdrop');
-});
+}, 'Un momento…'));
 
 /* ======================== 17. HELPERS: SHEETS / MODALES / TOAST ============== */
 
@@ -1197,7 +1252,7 @@ function mensajeErrorAuth(codigo) {
   return mapa[codigo] || 'Ocurrió un error. Inténtalo de nuevo.';
 }
 
-el.btnAuthPrincipal.addEventListener('click', async () => {
+el.btnAuthPrincipal.addEventListener('click', () => conProteccionDoble(el.btnAuthPrincipal, async () => {
   const nombre = el.authNombre.value.trim();
   const email = el.authEmail.value.trim();
   const password = el.authPassword.value;
@@ -1205,10 +1260,6 @@ el.btnAuthPrincipal.addEventListener('click', async () => {
 
   if (!email || !password) { el.authError.textContent = 'Completa correo y contraseña.'; return; }
   if (modoRegistro && !nombre) { el.authError.textContent = 'Escribe cómo quieres que te llamemos.'; return; }
-
-  el.btnAuthPrincipal.disabled = true;
-  const textoOriginal = el.btnAuthPrincipal.textContent;
-  el.btnAuthPrincipal.textContent = 'Un momento…';
 
   try {
     if (modoRegistro) {
@@ -1220,11 +1271,8 @@ el.btnAuthPrincipal.addEventListener('click', async () => {
     }
   } catch (err) {
     el.authError.textContent = mensajeErrorAuth(err.code);
-  } finally {
-    el.btnAuthPrincipal.disabled = false;
-    el.btnAuthPrincipal.textContent = textoOriginal;
   }
-});
+}, 'Un momento…'));
 
 $('#btnCerrarSesion').addEventListener('click', () => {
   pedirConfirmacion('¿Cerrar sesión?', 'Tus datos seguirán guardados en la nube.', () => signOut(auth), '👋');
@@ -1244,6 +1292,7 @@ onAuthStateChanged(auth, (user) => {
     renderSaludo(user);
     el.authNombre.value = ''; el.authEmail.value = ''; el.authPassword.value = '';
     iniciarSuscripciones(user.uid);
+    irAPestana(localStorage.getItem(CLAVE_ULTIMA_PESTANA) || 'inicio');
   } else {
     currentUid = null;
     migracionHecha = false;
@@ -1285,7 +1334,7 @@ async function reautenticar(passwordActual) {
   await reauthenticateWithCredential(auth.currentUser, credencial);
 }
 
-$('#btnGuardarNombre').addEventListener('click', async () => {
+$('#btnGuardarNombre').addEventListener('click', () => conProteccionDoble($('#btnGuardarNombre'), async () => {
   const nombre = el.inputCuentaNombre.value.trim();
   if (!nombre) { mostrarMensajeCuenta('Escribe un nombre válido.', true); return; }
   try {
@@ -1293,9 +1342,9 @@ $('#btnGuardarNombre').addEventListener('click', async () => {
     renderSaludo(auth.currentUser);
     mostrarMensajeCuenta('Nombre actualizado ✅', false);
   } catch (err) { mostrarMensajeCuenta(mensajeErrorAuth(err.code), true); }
-});
+}));
 
-$('#btnCambiarCorreo').addEventListener('click', async () => {
+$('#btnCambiarCorreo').addEventListener('click', () => conProteccionDoble($('#btnCambiarCorreo'), async () => {
   const nuevoCorreo = el.inputCuentaNuevoCorreo.value.trim();
   const passwordActual = el.inputCuentaPasswordCorreo.value;
   if (!nuevoCorreo) { mostrarMensajeCuenta('Escribe el nuevo correo.', true); return; }
@@ -1307,9 +1356,9 @@ $('#btnCambiarCorreo').addEventListener('click', async () => {
     el.inputCuentaNuevoCorreo.value = ''; el.inputCuentaPasswordCorreo.value = '';
     mostrarMensajeCuenta('Correo actualizado ✅', false);
   } catch (err) { mostrarMensajeCuenta(mensajeErrorAuth(err.code), true); }
-});
+}));
 
-$('#btnCambiarPassword').addEventListener('click', async () => {
+$('#btnCambiarPassword').addEventListener('click', () => conProteccionDoble($('#btnCambiarPassword'), async () => {
   const nuevaPassword = el.inputCuentaNuevaPassword.value;
   const passwordActual = el.inputCuentaPasswordActual.value;
   if (!nuevaPassword || nuevaPassword.length < 6) { mostrarMensajeCuenta('La nueva contraseña debe tener al menos 6 caracteres.', true); return; }
@@ -1320,14 +1369,14 @@ $('#btnCambiarPassword').addEventListener('click', async () => {
     el.inputCuentaNuevaPassword.value = ''; el.inputCuentaPasswordActual.value = '';
     mostrarMensajeCuenta('Contraseña actualizada ✅', false);
   } catch (err) { mostrarMensajeCuenta(mensajeErrorAuth(err.code), true); }
-});
+}));
 
 /* ============================ 20. INICIALIZACIÓN ============================= */
 
 let ultimaFechaKey = toDateKey(new Date());
 setInterval(() => {
   const actual = toDateKey(new Date());
-  if (actual !== ultimaFechaKey) { ultimaFechaKey = actual; renderTodo(); }
+  if (actual !== ultimaFechaKey) { ultimaFechaKey = actual; solicitarRenderTodo(); }
 }, 60 * 1000);
 
 // Si tras 8s no ha llegado ningún dato (ej. sin conexión la primera vez), quitamos

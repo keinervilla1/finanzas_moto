@@ -163,3 +163,62 @@ usuarios/{uid}/clientes/{clienteId}
 - ❌ Reglas Firestore (firestore.rules.txt igual)
 - ❌ Comportamiento visible para el usuario
 - ❌ Datos guardados
+
+#### Dejamos version base v1.2
+
+#### base solida v1.2
+
+# Changelog — Domi
+
+Todas las versiones notables de la aplicación se documentan en este archivo.
+
+## [1.5] — Experiencia de usuario y base más sólida
+
+### Agregado
+- **Protección contra doble envío (reutilizable):** nuevo helper `conProteccionDoble()` que deshabilita el botón, muestra "Guardando…" y lo restaura al terminar. Se aplicó a los 10 botones que guardan o confirman algo en la app (domicilio, frecuente, gasto, pago, meta, eliminar/confirmar genérico, inicio de sesión/registro, nombre, correo y contraseña de cuenta), eliminando además una lógica manual que estaba duplicada en el botón de autenticación.
+- **Recordar la última pestaña:** la app guarda en el dispositivo cuál de las 5 pestañas principales (Inicio, Semana, Registros, Deben, Más) estaba abierta, y la restaura automáticamente al volver a entrar. No se recuerdan formularios ni pantallas emergentes abiertas, solo la navegación principal.
+- **Pantalla "Más" reorganizada por categorías:** Cuenta, Datos, Herramientas y Aplicación, dejando espacio ordenado para futuras funciones sin romper el diseño actual. La meta semanal ahora también es accesible desde aquí.
+- `CHANGELOG.md` (este archivo).
+
+### Corregido
+- **Orden de "Domicilios de hoy":** ahora se muestran en orden cronológico real (del primero al último realizado). Se agregó un desempate por el instante exacto de guardado para los casos en que dos domicilios quedaron con la misma hora — antes, en ese escenario, el orden podía verse invertido. El historial general ("Registros") sigue mostrando del más reciente al más antiguo, sin cambios en ese comportamiento.
+- Se eliminó una constante (`TITULOS`) que ya no se usaba, y una condición de navegación hacia una pantalla que nunca se activa desde el menú inferior — código muerto de una reorganización anterior.
+
+### Mejorado
+- **Renderizados repetidos:** las actualizaciones de pantalla que antes se disparaban varias veces casi simultáneamente (por ejemplo, al iniciar sesión y llegar varios datos de la nube casi a la vez) ahora se agrupan en un solo repintado mediante `solicitarRenderTodo()`.
+- Revisión general de botones y cargas: se confirmó que las pantallas con carga bajo demanda (Registros, historial de semanas) ya evitaban recargas innecesarias mediante banderas de estado; se mantuvieron y documentaron.
+
+### Sin cambios (por diseño)
+- Diseño visual, paleta de colores y componentes.
+- Arquitectura de datos en Firestore (perfil + subcolecciones `entregas`/`gastos`).
+- No se agregaron dependencias nuevas.
+
+---
+
+## [1.4] — Deben, Gastos, Registros y medio de pago
+- Nueva categoría **Deben** para domicilios no pagados de inmediato, con marcado de pago posterior.
+- Nuevo módulo de **Gastos** por categoría (gasolina, comida, mantenimiento, peajes, otros) y cálculo de ganancia neta (ingresos − gastos).
+- Nueva pantalla **Registros**: historial completo de domicilios con filtros por rango de fechas y carga paginada ("Cargar más").
+- Medio de pago (Efectivo/Transferencia) y tipo de domicilio (Normal/Contrata) con auto-selección de "¿se pagó de inmediato?" según el tipo.
+- Indicadores de carga: pantalla de arranque, barra de "Sincronizando…".
+- Migración de la arquitectura de datos de un documento único a subcolecciones (`entregas`, `gastos`) para mantener la app rápida a largo plazo.
+
+## [1.3] — Cuenta de usuario
+- Configuración de cuenta: cambiar nombre para mostrar, correo electrónico y contraseña (con reautenticación).
+- Saludo personalizado ("Hola, Nombre 👋") en la pantalla principal.
+
+## [1.2] — Sincronización en la nube
+- Autenticación con correo y contraseña (Firebase Authentication).
+- Sincronización de domicilios, frecuentes y meta semanal entre dispositivos (Firebase Firestore).
+- Persistencia de sesión en el dispositivo.
+
+## [1.1] — PWA
+- Manifest e íconos para instalar la app en el celular como aplicación nativa.
+- Service worker con caché para uso sin conexión.
+
+## [1.0] — Versión inicial
+- Registro de domicilios del día con destinos frecuentes.
+- Cálculo del día (total, cantidad, promedio, primer/último domicilio).
+- Resumen semanal con meta y progreso, mejor día y promedio diario.
+- Historial de semanas anteriores.
+- Diseño verde/blanco estilo iPhone, con animaciones y componentes tipo tarjeta.

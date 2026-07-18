@@ -523,6 +523,9 @@ ul{ list-style:none; margin:0; padding:0; }
 .cuenta-msg{ min-height:18px; font-size:12.5px; font-weight:600; color:var(--verde-700); text-align:center; margin:14px 0 10px; }
 .cuenta-msg.is-error{ color:var(--rojo); }
 
+.subsection-title{ margin:0; font-size:13.5px; font-weight:700; color:var(--text-600); }
+.app-version{ text-align:center; font-size:11.5px; color:var(--text-400); margin:14px 0 4px; }
+
 /* ---------- Utilidades responsive ---------- */
 @media (min-width:461px){
   body{ background:#EAF3EE; }
