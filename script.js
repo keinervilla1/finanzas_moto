@@ -406,21 +406,28 @@ const $ = sel => document.querySelector(sel);
 
 const CLAVE_ULTIMA_PESTANA = 'domi_ultima_pestana';
 
-/** Cambia de pestaña y recuerda cuál quedó activa (solo la navegación, nunca
- *  formularios/sheets abiertos) para restaurarla la próxima vez que se abra
- *  la app. Se reutiliza tanto para los clics del usuario como para la
- *  restauración automática al iniciar sesión — así no hay lógica duplicada. */
+/** Pestañas que se recuerdan y restauran al reabrir la app (las 5 del menú
+ *  inferior). "gastos" es una subpantalla de "Más": se navega igual que las
+ *  demás pero no se persiste ni tiene botón propio en la barra. */
+const PESTANAS_PERSISTENTES = ['inicio', 'semana', 'registros', 'deben', 'frecuentes'];
+const TAB_CONTENEDOR = { gastos: 'frecuentes' }; // qué botón de la barra se resalta
+
+/** Cambia de pantalla por un único camino (resalta el botón, resetea el scroll,
+ *  dispara la carga bajo demanda si hace falta y recuerda la pestaña principal).
+ *  Se usa igual para los clics del usuario y para la restauración al iniciar. */
 function irAPestana(screen) {
   const pantalla = document.getElementById('screen-' + screen);
-  if (!pantalla) return; // pestaña desconocida (dato viejo en localStorage, por ejemplo)
+  if (!pantalla) return; // pantalla desconocida (dato viejo en localStorage, por ejemplo)
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   pantalla.classList.add('active');
-  document.querySelectorAll('.tabbar__item').forEach(b => b.classList.toggle('active', b.dataset.screen === screen));
+  const tabActiva = TAB_CONTENEDOR[screen] || screen;
+  document.querySelectorAll('.tabbar__item').forEach(b => b.classList.toggle('active', b.dataset.screen === tabActiva));
   document.getElementById('screens').scrollTop = 0;
-  localStorage.setItem(CLAVE_ULTIMA_PESTANA, screen);
+  if (PESTANAS_PERSISTENTES.includes(screen)) localStorage.setItem(CLAVE_ULTIMA_PESTANA, screen);
 
   if (screen === 'registros' && registros.items.length === 0) cargarRegistros(true);
   if (screen === 'semana' && !historialSemanas.cargado) cargarHistorialSemanas();
+  if (screen === 'gastos') cargarGastosVista();
 }
 
 document.querySelectorAll('.tabbar__item').forEach(btn => {
@@ -568,6 +575,14 @@ function renderTodo() {
   renderSemana(dias, totalSemanaVal, totalGastosSemanaVal, pctMeta, hoyKey);
   renderFrecuentes();
   renderDeben(totalDeben);
+
+  // Si la pantalla Gastos está abierta y muestra un rango que vive en memoria
+  // (Hoy / Semana), lo refrescamos también; los rangos Mes/Todo son consultas
+  // puntuales y se recargan al tocar el filtro.
+  if (document.getElementById('screen-gastos').classList.contains('active')
+      && (gastosVista.rango === 'hoy' || gastosVista.rango === 'semana')) {
+    cargarGastosVista();
+  }
 }
 
 function renderInicio(entregasHoy, netaHoy, gastosHoy, totalSemanaVal, totalDeben, pctMeta) {
@@ -1059,17 +1074,8 @@ $('#btnGuardarFrecuente').addEventListener('click', () => conProteccionDoble($('
   mostrarToast('Guardado correctamente');
 }));
 
-$('#btnIrAGastos').addEventListener('click', () => {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-gastos').classList.add('active');
-  document.getElementById('screens').scrollTop = 0;
-  cargarGastosVista();
-});
-$('#btnVolverGastos').addEventListener('click', () => {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById('screen-frecuentes').classList.add('active');
-  document.getElementById('screens').scrollTop = 0;
-});
+$('#btnIrAGastos').addEventListener('click', () => irAPestana('gastos'));
+$('#btnVolverGastos').addEventListener('click', () => irAPestana('frecuentes'));
 
 /* ==================== 11. SHEET: AGREGAR / EDITAR GASTO ===================== */
 

@@ -5,6 +5,29 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.7] — Iconos de la PWA y navegación consistente
+
+### Agregado
+- **Iconos reales de la aplicación** en `icons/` (192, 512 y 512 maskable, más
+  `icon.svg`). Antes se referenciaban archivos que no existían: al instalar la
+  app en el celular no aparecía ícono. Monograma "D" sobre el verde de la marca.
+
+### Cambiado
+- **Navegación de "Gastos" unificada.** Era una pantalla que se abría con
+  manipulación manual del DOM, sin resaltar ninguna pestaña y de la que te
+  sacaba al recargar. Ahora pasa por el mismo camino que el resto de pantallas
+  (`irAPestana`), resalta la pestaña "Más" mientras está abierta y se refresca
+  sola cuando llegan datos nuevos (rangos Hoy/Semana).
+- El service worker vuelve a precachear los iconos (caché `v4`).
+- `<meta viewport>` ya no fuerza `maximum-scale=1`: se permite hacer zoom con los
+  dedos (accesibilidad).
+
+### Sin cambios (por diseño)
+- Diseño visual, paleta y componentes.
+- Las 5 pestañas del menú inferior y su comportamiento.
+
+---
+
 ## [1.6] — Corrección de errores y limpieza de documentación
 
 ### Corregido
