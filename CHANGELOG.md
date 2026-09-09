@@ -5,6 +5,31 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.8] — Modularización (paso 1: config y utilidades)
+
+Primer paso de la migración progresiva a módulos que pide `COPILOT_CONTEXT.md`,
+por lo más aislado y sin riesgo. `index.html` sigue cargando un único
+`<script type="module" src="script.js">`; ahora `script.js` importa los módulos.
+
+### Agregado
+- `js/config.js` — constantes de la app en un solo sitio: `META_SEMANAL_DEFAULT`
+  (antes el número `800000` estaba repetido en 4 lugares), `DIAS_SEMANA`, `MESES`,
+  `CATEGORIAS_GASTO` y las constantes de navegación.
+- `js/utils.js` — funciones puras extraídas de `script.js` sin cambios de
+  comportamiento: `formatCOP`, `formatHora12`, `toDateKey`, `getMonday`,
+  `addDays`, `formatFechaLarga`, `formatFechaCorta`, `rangoSemanaTexto`,
+  `frecuentesPorDefecto`, `uid`, `escapeHTML`, `tiempoCreacion`.
+
+### Cambiado
+- `script.js` pasa de ~1390 a ~1290 líneas; el resto de la división se hará en
+  pasos siguientes (`firebase.js`, `auth.js`, `navigation.js`, pantallas…).
+- El service worker precachea los dos módulos nuevos (caché `v5`).
+
+### Sin cambios
+- Comportamiento de la app, diseño, datos.
+
+---
+
 ## [1.7] — Iconos de la PWA y navegación consistente
 
 ### Agregado

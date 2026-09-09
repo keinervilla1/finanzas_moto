@@ -1,12 +1,14 @@
 /* Service worker de Domi — permite instalar la app y usarla sin conexión.
    Estrategia: cache-first para los archivos propios de la app. */
 
-const CACHE_NAME = 'domi-cache-v4';
+const CACHE_NAME = 'domi-cache-v5';
 const ARCHIVOS_CORE = [
   './',
   './index.html',
   './style.css',
   './script.js',
+  './js/config.js',
+  './js/utils.js',
   './firebase-config.js',
   './manifest.json',
   './icons/icon.svg',

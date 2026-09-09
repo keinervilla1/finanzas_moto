@@ -29,6 +29,16 @@ import {
   query, where, orderBy, limit, startAfter, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
+import {
+  DIAS_SEMANA, CATEGORIAS_GASTO, META_SEMANAL_DEFAULT,
+  CLAVE_ULTIMA_PESTANA, PESTANAS_PERSISTENTES, TAB_CONTENEDOR
+} from './js/config.js';
+import {
+  formatCOP, formatHora12, toDateKey, getMonday, addDays,
+  formatFechaLarga, formatFechaCorta, rangoSemanaTexto,
+  frecuentesPorDefecto, uid, escapeHTML, tiempoCreacion
+} from './js/utils.js';
+
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = initializeFirestore(firebaseApp, {
@@ -39,89 +49,13 @@ const db = initializeFirestore(firebaseApp, {
 // navegador o la app (hasta que el usuario cierre sesión manualmente).
 setPersistence(auth, browserLocalPersistence).catch(err => console.warn('Persistencia de sesión:', err));
 
-/* ============================ 1. UTILIDADES ============================ */
+/* ==================== 1. HELPERS DE UI (atados al DOM) =================== */
+/* Las utilidades puras (formato de dinero/fechas, escape, ids) están en
+   js/utils.js y las constantes en js/config.js. Aquí solo quedan helpers
+   que dependen del DOM o del ciclo de render. */
 
-const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const CATEGORIAS_GASTO = {
-  gasolina: { emoji: '⛽', label: 'Gasolina' },
-  comida: { emoji: '🍽️', label: 'Comida' },
-  mantenimiento: { emoji: '🔧', label: 'Mantenimiento' },
-  peajes: { emoji: '🛣️', label: 'Peajes' },
-  otros: { emoji: '📦', label: 'Otros' }
-};
-
-function formatCOP(valor) {
-  const n = Math.round(Number(valor) || 0);
-  return '$' + n.toLocaleString('es-CO');
-}
-
-function formatHora12(hhmm) {
-  if (!hhmm) return '—';
-  const [h, m] = hhmm.split(':').map(Number);
-  const periodo = h >= 12 ? 'p. m.' : 'a. m.';
-  let h12 = h % 12;
-  if (h12 === 0) h12 = 12;
-  return `${h12}:${String(m).padStart(2, '0')} ${periodo}`;
-}
-
-function toDateKey(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function getMonday(date) {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function addDays(date, n) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
-}
-
-function formatFechaLarga(date) {
-  return `${date.getDate()} de ${MESES[date.getMonth()]} de ${date.getFullYear()}`;
-}
-
-function formatFechaCorta(fechaKey) {
-  const d = new Date(fechaKey + 'T00:00:00');
-  return `${d.getDate()} ${MESES[d.getMonth()].slice(0, 3)}`;
-}
-
-function rangoSemanaTexto(monday) {
-  const sunday = addDays(monday, 6);
-  return `${monday.getDate()} ${MESES[monday.getMonth()].slice(0,3)} – ${sunday.getDate()} ${MESES[sunday.getMonth()].slice(0,3)}`;
-}
-
-function frecuentesPorDefecto() {
-  return [
-    { id: uid(), nombre: 'Éxito', valor: 6500 },
-    { id: uid(), nombre: 'D1', valor: 5000 },
-    { id: uid(), nombre: 'Ara', valor: 4800 },
-    { id: uid(), nombre: 'Farmatodo', valor: 7000 }
-  ];
-}
-
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-}
-
-function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str || '';
-  return div.innerHTML;
-}
-
-/* ================== 1.5 PROTECCIÓN CONTRA DOBLE ENVÍO (reutilizable) ======= */
-/* Un solo helper para TODOS los botones que guardan algo (domicilio, gasto,
+/* --- Protección contra doble envío (reutilizable) ---
+   Un solo helper para TODOS los botones que guardan algo (domicilio, gasto,
    frecuente, meta, pago, login, cuenta...). Evita duplicar la misma lógica de
    "deshabilitar → mostrar texto de carga → ejecutar → restaurar" en cada sitio. */
 
@@ -147,12 +81,6 @@ function solicitarRenderTodo() {
   queueMicrotask(() => { renderTodoPendiente = false; renderTodo(); });
 }
 
-/** Empate estable para ordenar dos registros creados en el mismo minuto
- *  (misma "hora"): usamos el instante real de creación en el servidor. */
-function tiempoCreacion(e) {
-  return e.creadoEn && typeof e.creadoEn.toMillis === 'function' ? e.creadoEn.toMillis() : 0;
-}
-
 /* ==================== 2. ESTADO EN MEMORIA ============== */
 
 /** Datos "activos" (en tiempo real): semana actual + deudas pendientes + perfil */
@@ -161,7 +89,7 @@ const state = {
   gastos: [],       // gastos de la semana actual
   deudas: [],       // TODOS los domicilios con pagado:false (sin importar la semana)
   frecuentes: [],
-  meta: 800000
+  meta: META_SEMANAL_DEFAULT
 };
 
 /** Datos "bajo demanda" para las pantallas Registros y Gastos (con filtro e historial) */
@@ -222,12 +150,12 @@ function detenerSuscripciones() {
 function suscribirsePerfil(uid) {
   unsubs.perfil = onSnapshot(refPerfil(uid), async (snap) => {
     if (!snap.exists()) {
-      await setDoc(refPerfil(uid), { frecuentes: frecuentesPorDefecto(), meta: 800000 });
+      await setDoc(refPerfil(uid), { frecuentes: frecuentesPorDefecto(), meta: META_SEMANAL_DEFAULT });
       return;
     }
     const data = snap.data();
     state.frecuentes = data.frecuentes || [];
-    state.meta = data.meta || 800000;
+    state.meta = data.meta || META_SEMANAL_DEFAULT;
 
     // --- Migración única: si quedó el arreglo "entregas" antiguo dentro del perfil,
     //     lo movemos a la subcolección "entregas" y lo borramos del perfil.
@@ -403,14 +331,6 @@ function totalesPorDia(monday) {
 /* ============================ 7. REFERENCIAS DOM ========================= */
 
 const $ = sel => document.querySelector(sel);
-
-const CLAVE_ULTIMA_PESTANA = 'domi_ultima_pestana';
-
-/** Pestañas que se recuerdan y restauran al reabrir la app (las 5 del menú
- *  inferior). "gastos" es una subpantalla de "Más": se navega igual que las
- *  demás pero no se persiste ni tiene botón propio en la barra. */
-const PESTANAS_PERSISTENTES = ['inicio', 'semana', 'registros', 'deben', 'frecuentes'];
-const TAB_CONTENEDOR = { gastos: 'frecuentes' }; // qué botón de la barra se resalta
 
 /** Cambia de pantalla por un único camino (resalta el botón, resetea el scroll,
  *  dispara la carga bajo demanda si hace falta y recuerda la pestaña principal).
@@ -1349,7 +1269,7 @@ onAuthStateChanged(auth, (user) => {
     migracionHecha = false;
     detenerSuscripciones();
     limpiarGruposEntregasSemana();
-    state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.meta = 800000;
+    state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.meta = META_SEMANAL_DEFAULT;
     registros.items = []; registros.cursor = null; registros.hasMore = true;
     historialSemanas.cargado = false; historialSemanas.semanas = [];
     el.appContainer.style.display = 'none';
