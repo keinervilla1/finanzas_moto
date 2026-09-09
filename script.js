@@ -21,16 +21,15 @@ import {
 import {
   formatCOP, formatHora12, toDateKey, getMonday, addDays,
   formatFechaLarga, formatFechaCorta, rangoSemanaTexto,
-  frecuentesPorDefecto, uid, escapeHTML, tiempoCreacion
+  uid, escapeHTML, tiempoCreacion
 } from './js/utils.js';
 import {
-  auth, refPerfil, coleccion, refDocumento,
+  auth,
   onAuthStateChanged,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
   updateProfile, updateEmail, updatePassword,
   reauthenticateWithCredential, EmailAuthProvider,
-  setDoc, updateDoc, deleteDoc, deleteField, addDoc,
-  onSnapshot, getDocs, query, where, orderBy, limit, startAfter, serverTimestamp
+  coleccion, getDocs, query, where, orderBy, limit, startAfter
 } from './js/firebase.js';
 import {
   $, el, conProteccionDoble,
@@ -38,224 +37,24 @@ import {
   mostrarToast, ocultarLoaderInicial
 } from './js/dom.js';
 import {
-  state, registros, gastosVista, historialSemanas, unsubs,
-  currentUid, setCurrentUid, migracionHecha, setMigracionHecha,
-  reemplazarGrupoEntregas, olvidarEntregaLocal, limpiarGruposEntregasSemana
+  state, registros, gastosVista, historialSemanas,
+  currentUid, setCurrentUid, setMigracionHecha,
+  olvidarEntregaLocal, limpiarGruposEntregasSemana
 } from './js/state.js';
+import { solicitarRenderTodo, registrarRenderTodo } from './js/render-bus.js';
+import {
+  entregasRealizadasEn, entregasPagadasEl, gastosDe, totalDe, totalesPorDia
+} from './js/calculos.js';
+import {
+  crearDocumento, actualizarDocumento, eliminarDocumento, mapDoc,
+  detenerSuscripciones, iniciarSuscripciones, avisarFaltaIndice, guardarPerfilEnNube
+} from './js/data.js';
 
 /* ==================== 1. CICLO DE RENDER ================================= */
+/* Los datos (js/data.js) piden repintar con solicitarRenderTodo() a través de
+   js/render-bus.js; aquí registramos la función real una vez cargada. */
 
-/** Junta varias llamadas seguidas a renderTodo() (por ejemplo cuando llegan
- *  5 snapshots casi al mismo tiempo al iniciar sesión) en un solo repintado. */
-let renderTodoPendiente = false;
-function solicitarRenderTodo() {
-  if (renderTodoPendiente) return;
-  renderTodoPendiente = true;
-  queueMicrotask(() => { renderTodoPendiente = false; renderTodo(); });
-}
-
-/* ==================== 3. HELPERS GENÉRICOS DE FIRESTORE =================== */
-
-let escriturasEnCurso = 0;
-
-/* Un mismo conjunto de funciones sirve tanto para "entregas" como "gastos",
-   para no duplicar la lógica de crear/actualizar/eliminar (requisito de
-   mantenibilidad del proyecto). Las referencias (refPerfil/coleccion/
-   refDocumento) y las instancias auth/db están en js/firebase.js. */
-
-async function crearDocumento(nombreColeccion, datos) {
-  marcarEscrituraInicio();
-  try {
-    return await addDoc(coleccion(currentUid, nombreColeccion), { ...datos, creadoEn: serverTimestamp() });
-  } finally { marcarEscrituraFin(); }
-}
-async function actualizarDocumento(nombreColeccion, id, cambios) {
-  marcarEscrituraInicio();
-  try {
-    return await updateDoc(refDocumento(currentUid, nombreColeccion, id), cambios);
-  } finally { marcarEscrituraFin(); }
-}
-async function eliminarDocumento(nombreColeccion, id) {
-  marcarEscrituraInicio();
-  try {
-    return await deleteDoc(refDocumento(currentUid, nombreColeccion, id));
-  } finally { marcarEscrituraFin(); }
-}
-
-function marcarEscrituraInicio() {
-  escriturasEnCurso++;
-  el.syncBar.classList.add('show');
-}
-function marcarEscrituraFin() {
-  escriturasEnCurso = Math.max(0, escriturasEnCurso - 1);
-  if (escriturasEnCurso === 0) el.syncBar.classList.remove('show');
-}
-
-/* ================= 4. SUSCRIPCIONES EN TIEMPO REAL (VISTA ACTIVA) ========= */
-
-function detenerSuscripciones() {
-  Object.values(unsubs).forEach(fn => fn && fn());
-  for (const k in unsubs) delete unsubs[k];
-}
-
-/** Perfil (frecuentes + meta) — y migración de datos antiguos si hace falta */
-function suscribirsePerfil(uid) {
-  unsubs.perfil = onSnapshot(refPerfil(uid), async (snap) => {
-    if (!snap.exists()) {
-      await setDoc(refPerfil(uid), { frecuentes: frecuentesPorDefecto(), meta: META_SEMANAL_DEFAULT });
-      return;
-    }
-    const data = snap.data();
-    state.frecuentes = data.frecuentes || [];
-    state.meta = data.meta || META_SEMANAL_DEFAULT;
-
-    // --- Migración única: si quedó el arreglo "entregas" antiguo dentro del perfil,
-    //     lo movemos a la subcolección "entregas" y lo borramos del perfil.
-    if (!migracionHecha && Array.isArray(data.entregas) && data.entregas.length > 0) {
-      setMigracionHecha(true);
-      mostrarToast('Actualizando tus datos a la nueva versión…');
-      for (const e of data.entregas) {
-        await crearDocumento('entregas', {
-          nombre: e.nombre, valor: Number(e.valor), hora: e.hora, fecha: e.fecha,
-          tipo: 'normal', medioPago: 'efectivo', pagado: true, fechaPago: e.fecha, descripcion: ''
-        });
-      }
-      await updateDoc(refPerfil(uid), { entregas: deleteField() });
-      mostrarToast('¡Listo! Tus domicilios anteriores ya están migrados ✅');
-    }
-    setMigracionHecha(true);
-
-    solicitarRenderTodo();
-    ocultarLoaderInicial();
-  }, (err) => { console.error(err); mostrarToast('Error al cargar tu perfil'); ocultarLoaderInicial(); });
-}
-
-/** Domicilios realizados esta semana (por fecha de creación) */
-function suscribirseEntregasSemana(uid, monday) {
-  const inicio = toDateKey(monday);
-  const fin = toDateKey(addDays(monday, 6));
-  const q = query(coleccion(uid, 'entregas'), where('fecha', '>=', inicio), where('fecha', '<=', fin), orderBy('fecha'));
-  unsubs.entregasSemana = onSnapshot(q, (snap) => {
-    reemplazarGrupoEntregas('realizadasSemana', snap.docs.map(mapDoc));
-    solicitarRenderTodo();
-    ocultarLoaderInicial();
-  }, (err) => console.error(err));
-}
-
-/** Domicilios pagados esta semana aunque se hayan realizado antes (deudas cobradas) */
-function suscribirseEntregasPagadasEnSemana(uid, monday) {
-  const inicio = toDateKey(monday);
-  const fin = toDateKey(addDays(monday, 6));
-  const q = query(coleccion(uid, 'entregas'), where('pagado', '==', true), where('fechaPago', '>=', inicio), where('fechaPago', '<=', fin));
-  unsubs.entregasPagadasSemana = onSnapshot(q, (snap) => {
-    reemplazarGrupoEntregas('pagadasSemana', snap.docs.map(mapDoc));
-    solicitarRenderTodo();
-  }, (err) => avisarFaltaIndice('pagos de la semana', err));
-}
-
-/** Aviso amigable (una sola vez) cuando Firestore todavía está construyendo un
- *  índice que la consulta necesita, en lugar de fallar en silencio. */
-let indiceAvisado = false;
-function avisarFaltaIndice(queDato, err) {
-  console.warn(`Consulta "${queDato}":`, err && err.message);
-  if (err && err.code === 'failed-precondition' && !indiceAvisado) {
-    indiceAvisado = true;
-    mostrarToast('Firestore está preparando un índice. Los históricos pueden tardar unos minutos en aparecer.');
-  }
-}
-
-/** Gastos de la semana actual */
-function suscribirseGastosSemana(uid, monday) {
-  const inicio = toDateKey(monday);
-  const fin = toDateKey(addDays(monday, 6));
-  const q = query(coleccion(uid, 'gastos'), where('fecha', '>=', inicio), where('fecha', '<=', fin), orderBy('fecha'));
-  unsubs.gastosSemana = onSnapshot(q, (snap) => {
-    state.gastos = snap.docs.map(mapDoc);
-    solicitarRenderTodo();
-  }, (err) => console.error(err));
-}
-
-/** Todas las deudas pendientes (pagado:false), sin importar cuándo se crearon */
-function suscribirseDeudas(uid) {
-  const q = query(coleccion(uid, 'entregas'), where('pagado', '==', false));
-  unsubs.deudas = onSnapshot(q, (snap) => {
-    state.deudas = snap.docs.map(mapDoc).sort((a, b) => (a.fecha < b.fecha ? 1 : -1));
-    solicitarRenderTodo();
-  }, (err) => console.error(err));
-}
-
-function mapDoc(d) { return { id: d.id, ...d.data() }; }
-
-function iniciarSuscripciones(uid) {
-  detenerSuscripciones();
-  limpiarGruposEntregasSemana();
-  const monday = getMonday(new Date());
-  suscribirsePerfil(uid);
-  suscribirseEntregasSemana(uid, monday);
-  suscribirseEntregasPagadasEnSemana(uid, monday);
-  suscribirseGastosSemana(uid, monday);
-  suscribirseDeudas(uid);
-}
-
-/* ======================= 5. GUARDAR PERFIL (frecuentes/meta) ============== */
-
-let guardarPerfilTimeout = null;
-let guardadoPerfilPendiente = false;
-function guardarPerfilEnNube() {
-  if (!currentUid) return;
-  clearTimeout(guardarPerfilTimeout);
-  // Marcamos "sincronizando" una sola vez por ráfaga de cambios. Antes, al
-  // llamar a esto varias veces seguidas (editar la meta rápido, crear 2
-  // frecuentes), el clearTimeout descartaba el marcarEscrituraFin() pendiente
-  // y la barra "Sincronizando…" se quedaba pegada para siempre.
-  if (!guardadoPerfilPendiente) {
-    guardadoPerfilPendiente = true;
-    marcarEscrituraInicio();
-  }
-  guardarPerfilTimeout = setTimeout(async () => {
-    guardadoPerfilPendiente = false;
-    try {
-      await setDoc(refPerfil(currentUid), { frecuentes: state.frecuentes, meta: state.meta }, { merge: true });
-    } catch (err) {
-      console.error(err);
-      mostrarToast('Sin conexión: se guardará cuando vuelva el internet');
-    } finally { marcarEscrituraFin(); }
-  }, 250);
-}
-
-/* ========================= 6. CÁLCULOS DERIVADOS ========================= */
-
-/** Domicilios de HOY en orden cronológico (el primero realizado va primero).
- *  Se ordena por hora y, si dos quedaron con la misma hora (p. ej. se
- *  agregaron varios sin cambiar el reloj), se desempata por el instante
- *  real en que se guardaron — así el orden siempre refleja el recorrido
- *  del día tal como ocurrió. */
-function entregasRealizadasEn(fechaKey) {
-  return state.entregas
-    .filter(e => e.fecha === fechaKey)
-    .sort((a, b) => {
-      const porHora = (a.hora || '').localeCompare(b.hora || '');
-      return porHora !== 0 ? porHora : tiempoCreacion(a) - tiempoCreacion(b);
-    });
-}
-function entregasPagadasEl(fechaKey) {
-  return state.entregas.filter(e => e.pagado && e.fechaPago === fechaKey);
-}
-function gastosDe(fechaKey) {
-  return state.gastos.filter(g => g.fecha === fechaKey);
-}
-function totalDe(lista) { return lista.reduce((sum, e) => sum + Number(e.valor), 0); }
-
-function totalesPorDia(monday) {
-  const dias = [];
-  for (let i = 0; i < 7; i++) {
-    const fecha = addDays(monday, i);
-    const fechaKey = toDateKey(fecha);
-    const ingresos = totalDe(entregasPagadasEl(fechaKey));
-    dias.push({ fecha, fechaKey, nombre: DIAS_SEMANA[i], total: ingresos });
-  }
-  return dias;
-}
+registrarRenderTodo(() => renderTodo());
 
 /* ==================== 7. NAVEGACIÓN ENTRE PANTALLAS ===================== */
 

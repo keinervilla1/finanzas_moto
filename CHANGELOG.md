@@ -5,6 +5,25 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.8.3] — Modularización (paso 4: capa de datos y cálculos)
+
+### Agregado
+- `js/calculos.js` — cálculos derivados del estado (entregas de un día en orden,
+  pagos, gastos, totales, totales por día de la semana).
+- `js/data.js` — capa de datos: escrituras genéricas a Firestore, indicador de
+  "Sincronizando…", las 5 suscripciones en tiempo real, migración de datos
+  antiguos, aviso de índice faltante y guardado del perfil.
+- `js/render-bus.js` — pequeño puente que rompe la dependencia circular entre la
+  capa de datos (pide repintar) y la de render (usa la capa de datos).
+
+### Cambiado
+- `script.js` baja de ~1290 a ~940 líneas. Ya solo contiene render, hojas/modales,
+  navegación, autenticación y el arranque. Sin cambios de comportamiento
+  (prueba de humo CDP: login OK, 0 errores).
+- Service worker: caché `v8`.
+
+---
+
 ## [1.8.2] — Modularización (paso 3: dom.js y state.js)
 
 ### Agregado
