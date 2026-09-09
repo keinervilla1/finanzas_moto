@@ -494,6 +494,8 @@ ul{ list-style:none; margin:0; padding:0; }
    VARIANTES DE TARJETAS: alerta / gastos
    ========================================================= */
 .stat-chip--warn .stat-chip__value{ color:#B45309; }
+#chipDeben{ cursor:pointer; transition:transform .15s ease; }
+#chipDeben:active{ transform:scale(.97); }
 .total-semana--warn{ background:#B45309; }
 .total-semana--gastos{ background:var(--card); color:var(--text-900); box-shadow:var(--shadow-sm); margin-top:10px; }
 .total-semana--gastos strong{ color:#DC2626; }

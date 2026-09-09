@@ -1,24 +1,25 @@
 /* Service worker de Domi — permite instalar la app y usarla sin conexión.
    Estrategia: cache-first para los archivos propios de la app. */
 
-const CACHE_NAME = 'domi-cache-v2';
+const CACHE_NAME = 'domi-cache-v3';
 const ARCHIVOS_CORE = [
   './',
   './index.html',
   './style.css',
   './script.js',
   './firebase-config.js',
-  './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png'
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ARCHIVOS_CORE))
+    caches.open(CACHE_NAME).then((cache) =>
+      // Cacheamos uno por uno y toleramos que alguno falle. Con cache.addAll()
+      // basta que un solo archivo dé 404 para que se caiga TODA la instalación
+      // y la app se quede sin modo offline.
+      Promise.allSettled(ARCHIVOS_CORE.map((url) => cache.add(url)))
+    ).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

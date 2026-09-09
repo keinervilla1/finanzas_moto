@@ -15,7 +15,7 @@
    No necesitas mantener esto en secreto de forma especial: estas claves
    son públicas por diseño en apps web de Firebase. La seguridad real la
    dan las "Reglas de seguridad" que configuras en Firestore (ver el
-   archivo firestore.rules.txt incluido en este proyecto).
+   archivo firestore.rules incluido en este proyecto).
    ========================================================================= */
 
 export const firebaseConfig = {

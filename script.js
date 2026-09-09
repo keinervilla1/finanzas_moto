@@ -256,7 +256,7 @@ function suscribirseEntregasSemana(uid, monday) {
   const fin = toDateKey(addDays(monday, 6));
   const q = query(coleccion(uid, 'entregas'), where('fecha', '>=', inicio), where('fecha', '<=', fin), orderBy('fecha'));
   unsubs.entregasSemana = onSnapshot(q, (snap) => {
-    mezclarEntregas(snap.docs.map(mapDoc));
+    reemplazarGrupoEntregas('realizadasSemana', snap.docs.map(mapDoc));
     solicitarRenderTodo();
     ocultarLoaderInicial();
   }, (err) => console.error(err));
@@ -268,20 +268,43 @@ function suscribirseEntregasPagadasEnSemana(uid, monday) {
   const fin = toDateKey(addDays(monday, 6));
   const q = query(coleccion(uid, 'entregas'), where('pagado', '==', true), where('fechaPago', '>=', inicio), where('fechaPago', '<=', fin));
   unsubs.entregasPagadasSemana = onSnapshot(q, (snap) => {
-    mezclarEntregas(snap.docs.map(mapDoc));
+    reemplazarGrupoEntregas('pagadasSemana', snap.docs.map(mapDoc));
     solicitarRenderTodo();
-  }, (err) => {
-    // Si Firebase pide crear un índice compuesto la primera vez, lo avisamos
-    // de forma amigable en vez de dejar la consola en silencio.
-    console.warn('Consulta de pagos cruzados de semana:', err.message);
-  });
+  }, (err) => avisarFaltaIndice('pagos de la semana', err));
 }
 
-/** Junta los resultados de las dos consultas de arriba en state.entregas, sin duplicar */
-const mapaEntregasSemana = new Map();
-function mezclarEntregas(items) {
-  items.forEach(it => mapaEntregasSemana.set(it.id, it));
-  state.entregas = [...mapaEntregasSemana.values()];
+/** state.entregas se arma juntando dos consultas (realizadas esta semana +
+ *  pagadas esta semana). Cada consulta guarda su propio grupo y en cada
+ *  snapshot lo reemplaza COMPLETO: así, si un domicilio se borra o se edita
+ *  desde otro dispositivo y deja de cumplir el filtro, desaparece de verdad
+ *  en vez de quedar como registro fantasma sumando en los totales. */
+const gruposEntregasSemana = { realizadasSemana: [], pagadasSemana: [] };
+function reemplazarGrupoEntregas(grupo, items) {
+  gruposEntregasSemana[grupo] = items;
+  const m = new Map();
+  gruposEntregasSemana.realizadasSemana.forEach(e => m.set(e.id, e));
+  gruposEntregasSemana.pagadasSemana.forEach(e => m.set(e.id, e));
+  state.entregas = [...m.values()];
+}
+function olvidarEntregaLocal(id) {
+  gruposEntregasSemana.realizadasSemana = gruposEntregasSemana.realizadasSemana.filter(e => e.id !== id);
+  gruposEntregasSemana.pagadasSemana = gruposEntregasSemana.pagadasSemana.filter(e => e.id !== id);
+  state.entregas = state.entregas.filter(e => e.id !== id);
+}
+function limpiarGruposEntregasSemana() {
+  gruposEntregasSemana.realizadasSemana = [];
+  gruposEntregasSemana.pagadasSemana = [];
+}
+
+/** Aviso amigable (una sola vez) cuando Firestore todavía está construyendo un
+ *  índice que la consulta necesita, en lugar de fallar en silencio. */
+let indiceAvisado = false;
+function avisarFaltaIndice(queDato, err) {
+  console.warn(`Consulta "${queDato}":`, err && err.message);
+  if (err && err.code === 'failed-precondition' && !indiceAvisado) {
+    indiceAvisado = true;
+    mostrarToast('Firestore está preparando un índice. Los históricos pueden tardar unos minutos en aparecer.');
+  }
 }
 
 /** Gastos de la semana actual */
@@ -308,7 +331,7 @@ function mapDoc(d) { return { id: d.id, ...d.data() }; }
 
 function iniciarSuscripciones(uid) {
   detenerSuscripciones();
-  mapaEntregasSemana.clear();
+  limpiarGruposEntregasSemana();
   const monday = getMonday(new Date());
   suscribirsePerfil(uid);
   suscribirseEntregasSemana(uid, monday);
@@ -320,11 +343,20 @@ function iniciarSuscripciones(uid) {
 /* ======================= 5. GUARDAR PERFIL (frecuentes/meta) ============== */
 
 let guardarPerfilTimeout = null;
+let guardadoPerfilPendiente = false;
 function guardarPerfilEnNube() {
   if (!currentUid) return;
   clearTimeout(guardarPerfilTimeout);
-  marcarEscrituraInicio();
+  // Marcamos "sincronizando" una sola vez por ráfaga de cambios. Antes, al
+  // llamar a esto varias veces seguidas (editar la meta rápido, crear 2
+  // frecuentes), el clearTimeout descartaba el marcarEscrituraFin() pendiente
+  // y la barra "Sincronizando…" se quedaba pegada para siempre.
+  if (!guardadoPerfilPendiente) {
+    guardadoPerfilPendiente = true;
+    marcarEscrituraInicio();
+  }
   guardarPerfilTimeout = setTimeout(async () => {
+    guardadoPerfilPendiente = false;
     try {
       await setDoc(refPerfil(currentUid), { frecuentes: state.frecuentes, meta: state.meta }, { merge: true });
     } catch (err) {
@@ -345,7 +377,7 @@ function entregasRealizadasEn(fechaKey) {
   return state.entregas
     .filter(e => e.fecha === fechaKey)
     .sort((a, b) => {
-      const porHora = a.hora.localeCompare(b.hora);
+      const porHora = (a.hora || '').localeCompare(b.hora || '');
       return porHora !== 0 ? porHora : tiempoCreacion(a) - tiempoCreacion(b);
     });
 }
@@ -394,6 +426,10 @@ function irAPestana(screen) {
 document.querySelectorAll('.tabbar__item').forEach(btn => {
   btn.addEventListener('click', () => irAPestana(btn.dataset.screen));
 });
+
+// El chip "Te deben" de la pantalla Inicio es un acceso directo a "Deben".
+const chipDeben = $('#chipDeben');
+if (chipDeben) chipDeben.addEventListener('click', () => irAPestana('deben'));
 
 const el = {
   bootLoader: $('#bootLoader'),
@@ -495,6 +531,7 @@ const el = {
 
 /* Estado de edición / selección en curso */
 let editingEntregaId = null;
+let editingEntregaOriginal = null; // objeto completo del domicilio que se está editando
 let editingFrecuenteId = null;
 let editingGastoId = null;
 let selectedFrecuenteId = null;
@@ -582,8 +619,7 @@ function crearItemEntrega(entrega, opciones = {}) {
       ev.stopPropagation();
       pedirConfirmacion('¿Eliminar este domicilio?', `${entrega.nombre} · ${formatCOP(entrega.valor)}`, async () => {
         await eliminarDocumento('entregas', entrega.id);
-        mapaEntregasSemana.delete(entrega.id);
-        state.entregas = state.entregas.filter(e => e.id !== entrega.id);
+        olvidarEntregaLocal(entrega.id);
         solicitarRenderTodo();
         mostrarToast('Domicilio eliminado');
       }, '🗑️');
@@ -696,8 +732,11 @@ async function cargarHistorialSemanas() {
     historialSemanas.semanas = [...grupos.values()].sort((a, b) => b.monday - a.monday);
     renderHistorial();
   } catch (err) {
-    console.error(err);
-    mostrarToast('No se pudo cargar el historial de semanas');
+    // Puede fallar si Firestore aún construye el índice compuesto que necesita
+    // esta consulta (pagado + fechaPago desc). Se avisa y se reintenta al
+    // volver a abrir la pestaña Semana.
+    historialSemanas.cargado = false;
+    avisarFaltaIndice('historial de semanas', err);
   }
 }
 
@@ -778,7 +817,7 @@ function renderRegistros() {
   registros.items
     .sort((a, b) => {
       if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
-      const porHora = b.hora.localeCompare(a.hora);
+      const porHora = (b.hora || '').localeCompare(a.hora || '');
       return porHora !== 0 ? porHora : tiempoCreacion(b) - tiempoCreacion(a);
     })
     .forEach(e => el.listaRegistros.appendChild(crearItemEntrega(e, { onClick: abrirModalDetalle })));
@@ -890,6 +929,7 @@ function actualizarVisibilidadCamposPago() {
 
 function abrirSheetEntrega(entregaExistente) {
   editingEntregaId = entregaExistente ? entregaExistente.id : null;
+  editingEntregaOriginal = entregaExistente || null;
   selectedFrecuenteId = null;
   el.sheetTitulo.textContent = entregaExistente ? 'Editar domicilio' : 'Agregar domicilio';
 
@@ -962,6 +1002,11 @@ $('#btnGuardarDomicilio').addEventListener('click', () => conProteccionDoble($('
 
   try {
     if (editingEntregaId) {
+      // Si ya estaba pagado y sigue pagado, conservamos el día real del pago:
+      // corregir el nombre o el valor no debe mover el ingreso a la semana de hoy.
+      if (pagado && editingEntregaOriginal && editingEntregaOriginal.pagado && editingEntregaOriginal.fechaPago) {
+        datos.fechaPago = editingEntregaOriginal.fechaPago;
+      }
       await actualizarDocumento('entregas', editingEntregaId, datos);
       mostrarToast('Domicilio actualizado');
     } else {
@@ -1297,7 +1342,7 @@ onAuthStateChanged(auth, (user) => {
     currentUid = null;
     migracionHecha = false;
     detenerSuscripciones();
-    mapaEntregasSemana.clear();
+    limpiarGruposEntregasSemana();
     state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.meta = 800000;
     registros.items = []; registros.cursor = null; registros.hasMore = true;
     historialSemanas.cargado = false; historialSemanas.semanas = [];

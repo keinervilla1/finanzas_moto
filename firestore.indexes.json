@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "entregas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pagado", "order": "ASCENDING" },
+        { "fieldPath": "fechaPago", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "entregas",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "pagado", "order": "ASCENDING" },
+        { "fieldPath": "fechaPago", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
