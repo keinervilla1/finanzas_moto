@@ -5,6 +5,22 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.8.1] — Modularización (paso 2: firebase.js)
+
+### Agregado
+- `js/firebase.js` — único módulo que conoce la versión del SDK de Firebase.
+  Crea las instancias `auth` y `db`, configura la persistencia de sesión y
+  expone las referencias (`refPerfil`, `coleccion`, `refDocumento`). Reexporta
+  las funciones del SDK que usa el resto de la app, para que actualizar la
+  versión de Firebase sea un cambio de un solo archivo.
+
+### Cambiado
+- `script.js` ya no importa de `gstatic.com` directamente: todo pasa por
+  `js/firebase.js`. Sin cambios de comportamiento.
+- Service worker: precachea `js/firebase.js` (caché `v6`).
+
+---
+
 ## [1.8] — Modularización (paso 1: config y utilidades)
 
 Primer paso de la migración progresiva a módulos que pide `COPILOT_CONTEXT.md`,

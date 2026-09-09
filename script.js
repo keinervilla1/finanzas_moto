@@ -12,22 +12,7 @@
    de domicilios con el tiempo.
    ========================================================================= */
 
-/* ======================= 0. FIREBASE: INICIALIZACIÓN ===================== */
-
-import { firebaseConfig } from './firebase-config.js';
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
-import {
-  getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence,
-  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
-  updateProfile, updateEmail, updatePassword,
-  reauthenticateWithCredential, EmailAuthProvider
-} from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
-import {
-  initializeFirestore, persistentLocalCache, persistentSingleTabManager,
-  doc, setDoc, updateDoc, deleteDoc, deleteField,
-  collection, addDoc, onSnapshot, getDocs,
-  query, where, orderBy, limit, startAfter, serverTimestamp
-} from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+/* ============================ 0. MÓDULOS ================================= */
 
 import {
   DIAS_SEMANA, CATEGORIAS_GASTO, META_SEMANAL_DEFAULT,
@@ -38,16 +23,15 @@ import {
   formatFechaLarga, formatFechaCorta, rangoSemanaTexto,
   frecuentesPorDefecto, uid, escapeHTML, tiempoCreacion
 } from './js/utils.js';
-
-const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
-const db = initializeFirestore(firebaseApp, {
-  localCache: persistentLocalCache({ tabManager: persistentSingleTabManager() })
-});
-
-// Mantiene la sesión iniciada en este dispositivo aunque se cierre el
-// navegador o la app (hasta que el usuario cierre sesión manualmente).
-setPersistence(auth, browserLocalPersistence).catch(err => console.warn('Persistencia de sesión:', err));
+import {
+  auth, refPerfil, coleccion, refDocumento,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
+  updateProfile, updateEmail, updatePassword,
+  reauthenticateWithCredential, EmailAuthProvider,
+  setDoc, updateDoc, deleteDoc, deleteField, addDoc,
+  onSnapshot, getDocs, query, where, orderBy, limit, startAfter, serverTimestamp
+} from './js/firebase.js';
 
 /* ==================== 1. HELPERS DE UI (atados al DOM) =================== */
 /* Las utilidades puras (formato de dinero/fechas, escape, ids) están en
@@ -105,11 +89,8 @@ let escriturasEnCurso = 0;
 /* ==================== 3. HELPERS GENÉRICOS DE FIRESTORE =================== */
 /* Un mismo conjunto de funciones sirve tanto para "entregas" como "gastos",
    para no duplicar la lógica de crear/actualizar/eliminar (requisito de
-   mantenibilidad del proyecto). */
-
-function refPerfil(uid) { return doc(db, 'usuarios', uid); }
-function coleccion(uid, nombre) { return collection(db, 'usuarios', uid, nombre); }
-function refDocumento(uid, nombreColeccion, id) { return doc(db, 'usuarios', uid, nombreColeccion, id); }
+   mantenibilidad del proyecto). Las referencias (refPerfil/coleccion/
+   refDocumento) y las instancias auth/db están en js/firebase.js. */
 
 async function crearDocumento(nombreColeccion, datos) {
   marcarEscrituraInicio();
