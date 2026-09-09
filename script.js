@@ -32,29 +32,18 @@ import {
   setDoc, updateDoc, deleteDoc, deleteField, addDoc,
   onSnapshot, getDocs, query, where, orderBy, limit, startAfter, serverTimestamp
 } from './js/firebase.js';
+import {
+  $, el, conProteccionDoble,
+  mostrarSheet, ocultarSheet, mostrarModal, ocultarModal,
+  mostrarToast, ocultarLoaderInicial
+} from './js/dom.js';
+import {
+  state, registros, gastosVista, historialSemanas, unsubs,
+  currentUid, setCurrentUid, migracionHecha, setMigracionHecha,
+  reemplazarGrupoEntregas, olvidarEntregaLocal, limpiarGruposEntregasSemana
+} from './js/state.js';
 
-/* ==================== 1. HELPERS DE UI (atados al DOM) =================== */
-/* Las utilidades puras (formato de dinero/fechas, escape, ids) están en
-   js/utils.js y las constantes en js/config.js. Aquí solo quedan helpers
-   que dependen del DOM o del ciclo de render. */
-
-/* --- Protección contra doble envío (reutilizable) ---
-   Un solo helper para TODOS los botones que guardan algo (domicilio, gasto,
-   frecuente, meta, pago, login, cuenta...). Evita duplicar la misma lógica de
-   "deshabilitar → mostrar texto de carga → ejecutar → restaurar" en cada sitio. */
-
-async function conProteccionDoble(boton, accionAsync, textoCargando = 'Guardando…') {
-  if (!boton || boton.disabled) return; // ya está procesando: ignoramos el clic repetido
-  const textoOriginal = boton.textContent;
-  boton.disabled = true;
-  boton.textContent = textoCargando;
-  try {
-    await accionAsync();
-  } finally {
-    boton.disabled = false;
-    boton.textContent = textoOriginal;
-  }
-}
+/* ==================== 1. CICLO DE RENDER ================================= */
 
 /** Junta varias llamadas seguidas a renderTodo() (por ejemplo cuando llegan
  *  5 snapshots casi al mismo tiempo al iniciar sesión) en un solo repintado. */
@@ -65,28 +54,10 @@ function solicitarRenderTodo() {
   queueMicrotask(() => { renderTodoPendiente = false; renderTodo(); });
 }
 
-/* ==================== 2. ESTADO EN MEMORIA ============== */
+/* ==================== 3. HELPERS GENÉRICOS DE FIRESTORE =================== */
 
-/** Datos "activos" (en tiempo real): semana actual + deudas pendientes + perfil */
-const state = {
-  entregas: [],     // domicilios de la semana actual (más pagos de deudas antiguas cobradas esta semana)
-  gastos: [],       // gastos de la semana actual
-  deudas: [],       // TODOS los domicilios con pagado:false (sin importar la semana)
-  frecuentes: [],
-  meta: META_SEMANAL_DEFAULT
-};
-
-/** Datos "bajo demanda" para las pantallas Registros y Gastos (con filtro e historial) */
-const registros = { items: [], cursor: null, hasMore: true, rango: 'semana', cargando: false };
-const gastosVista = { items: [], rango: 'hoy' };
-const historialSemanas = { cargado: false, semanas: [] };
-
-let currentUid = null;
-let migracionHecha = false;
-const unsubs = {}; // listeners activos: { perfil, entregasSemana, entregasPagadasSemana, gastosSemana, deudas }
 let escriturasEnCurso = 0;
 
-/* ==================== 3. HELPERS GENÉRICOS DE FIRESTORE =================== */
 /* Un mismo conjunto de funciones sirve tanto para "entregas" como "gastos",
    para no duplicar la lógica de crear/actualizar/eliminar (requisito de
    mantenibilidad del proyecto). Las referencias (refPerfil/coleccion/
@@ -141,7 +112,7 @@ function suscribirsePerfil(uid) {
     // --- Migración única: si quedó el arreglo "entregas" antiguo dentro del perfil,
     //     lo movemos a la subcolección "entregas" y lo borramos del perfil.
     if (!migracionHecha && Array.isArray(data.entregas) && data.entregas.length > 0) {
-      migracionHecha = true;
+      setMigracionHecha(true);
       mostrarToast('Actualizando tus datos a la nueva versión…');
       for (const e of data.entregas) {
         await crearDocumento('entregas', {
@@ -152,7 +123,7 @@ function suscribirsePerfil(uid) {
       await updateDoc(refPerfil(uid), { entregas: deleteField() });
       mostrarToast('¡Listo! Tus domicilios anteriores ya están migrados ✅');
     }
-    migracionHecha = true;
+    setMigracionHecha(true);
 
     solicitarRenderTodo();
     ocultarLoaderInicial();
@@ -180,29 +151,6 @@ function suscribirseEntregasPagadasEnSemana(uid, monday) {
     reemplazarGrupoEntregas('pagadasSemana', snap.docs.map(mapDoc));
     solicitarRenderTodo();
   }, (err) => avisarFaltaIndice('pagos de la semana', err));
-}
-
-/** state.entregas se arma juntando dos consultas (realizadas esta semana +
- *  pagadas esta semana). Cada consulta guarda su propio grupo y en cada
- *  snapshot lo reemplaza COMPLETO: así, si un domicilio se borra o se edita
- *  desde otro dispositivo y deja de cumplir el filtro, desaparece de verdad
- *  en vez de quedar como registro fantasma sumando en los totales. */
-const gruposEntregasSemana = { realizadasSemana: [], pagadasSemana: [] };
-function reemplazarGrupoEntregas(grupo, items) {
-  gruposEntregasSemana[grupo] = items;
-  const m = new Map();
-  gruposEntregasSemana.realizadasSemana.forEach(e => m.set(e.id, e));
-  gruposEntregasSemana.pagadasSemana.forEach(e => m.set(e.id, e));
-  state.entregas = [...m.values()];
-}
-function olvidarEntregaLocal(id) {
-  gruposEntregasSemana.realizadasSemana = gruposEntregasSemana.realizadasSemana.filter(e => e.id !== id);
-  gruposEntregasSemana.pagadasSemana = gruposEntregasSemana.pagadasSemana.filter(e => e.id !== id);
-  state.entregas = state.entregas.filter(e => e.id !== id);
-}
-function limpiarGruposEntregasSemana() {
-  gruposEntregasSemana.realizadasSemana = [];
-  gruposEntregasSemana.pagadasSemana = [];
 }
 
 /** Aviso amigable (una sola vez) cuando Firestore todavía está construyendo un
@@ -309,9 +257,7 @@ function totalesPorDia(monday) {
   return dias;
 }
 
-/* ============================ 7. REFERENCIAS DOM ========================= */
-
-const $ = sel => document.querySelector(sel);
+/* ==================== 7. NAVEGACIÓN ENTRE PANTALLAS ===================== */
 
 /** Cambia de pantalla por un único camino (resalta el botón, resetea el scroll,
  *  dispara la carga bajo demanda si hace falta y recuerda la pestaña principal).
@@ -338,104 +284,6 @@ document.querySelectorAll('.tabbar__item').forEach(btn => {
 // El chip "Te deben" de la pantalla Inicio es un acceso directo a "Deben".
 const chipDeben = $('#chipDeben');
 if (chipDeben) chipDeben.addEventListener('click', () => irAPestana('deben'));
-
-const el = {
-  bootLoader: $('#bootLoader'),
-  syncBar: $('#syncBar'),
-
-  fechaActual: $('#fechaActual'),
-  saludoUsuario: $('#saludoUsuario'),
-  gananciaHoy: $('#gananciaHoy'),
-  cantidadHoy: $('#cantidadHoy'),
-  gastosHoyMini: $('#gastosHoyMini'),
-  gananciaSemanaMini: $('#gananciaSemanaMini'),
-  totalDebenMini: $('#totalDebenMini'),
-  ringHeroFg: $('#ringHeroFg'),
-  ringHeroPct: $('#ringHeroPct'),
-  ringMiniFg: $('#ringMiniFg'),
-  metaMiniPct: $('#metaMiniPct'),
-  listaHoy: $('#listaHoy'),
-  badgeHoy: $('#badgeHoy'),
-
-  goalBarFill: $('#goalBarFill'),
-  goalActual: $('#goalActual'),
-  goalMeta: $('#goalMeta'),
-  mejorDiaValor: $('#mejorDiaValor'),
-  mejorDiaNombre: $('#mejorDiaNombre'),
-  promedioDiarioValor: $('#promedioDiarioValor'),
-  listaDias: $('#listaDias'),
-  totalSemana: $('#totalSemana'),
-  totalGastosSemana: $('#totalGastosSemana'),
-
-  listaFrecuentes: $('#listaFrecuentes'),
-  listaHistorial: $('#listaHistorial'),
-
-  listaRegistros: $('#listaRegistros'),
-  btnCargarMasRegistros: $('#btnCargarMasRegistros'),
-
-  totalDebenHeader: $('#totalDebenHeader'),
-  badgeDeben: $('#badgeDeben'),
-  listaDeben: $('#listaDeben'),
-
-  listaGastos: $('#listaGastos'),
-  totalGastosFiltro: $('#totalGastosFiltro'),
-
-  chipsFrecuentes: $('#chipsFrecuentes'),
-  sheetTitulo: $('#sheetTitulo'),
-  inputNombre: $('#inputNombre'),
-  inputValor: $('#inputValor'),
-  inputHora: $('#inputHora'),
-  inputDescripcion: $('#inputDescripcion'),
-  campoDescripcion: $('#campoDescripcion'),
-  bloqueMedioPago: $('#bloqueMedioPago'),
-
-  inputFrecNombre: $('#inputFrecNombre'),
-  inputFrecValor: $('#inputFrecValor'),
-  sheetFrecuenteTitulo: $('#sheetFrecuenteTitulo'),
-
-  inputGastoValor: $('#inputGastoValor'),
-  inputGastoDescripcion: $('#inputGastoDescripcion'),
-  inputGastoFecha: $('#inputGastoFecha'),
-  sheetGastoTitulo: $('#sheetGastoTitulo'),
-
-  pagoResumen: $('#pagoResumen'),
-
-  calcTotal: $('#calcTotal'),
-  calcGastos: $('#calcGastos'),
-  calcNeta: $('#calcNeta'),
-  calcCantidad: $('#calcCantidad'),
-  calcPromedio: $('#calcPromedio'),
-  calcPrimero: $('#calcPrimero'),
-  calcUltimo: $('#calcUltimo'),
-
-  inputMeta: $('#inputMeta'),
-
-  detalleContenido: $('#detalleContenido'),
-
-  confirmIcono: $('#confirmIcono'),
-  confirmTitulo: $('#confirmTitulo'),
-  confirmSub: $('#confirmSub'),
-
-  toast: $('#toast'),
-
-  authScreen: $('#authScreen'),
-  appContainer: $('#appContainer'),
-  campoAuthNombre: $('#campoAuthNombre'),
-  authNombre: $('#authNombre'),
-  authEmail: $('#authEmail'),
-  authPassword: $('#authPassword'),
-  authError: $('#authError'),
-  btnAuthPrincipal: $('#btnAuthPrincipal'),
-  btnAuthToggle: $('#btnAuthToggle'),
-  cuentaEmail: $('#cuentaEmail'),
-
-  inputCuentaNombre: $('#inputCuentaNombre'),
-  inputCuentaNuevoCorreo: $('#inputCuentaNuevoCorreo'),
-  inputCuentaPasswordCorreo: $('#inputCuentaPasswordCorreo'),
-  inputCuentaNuevaPassword: $('#inputCuentaNuevaPassword'),
-  inputCuentaPasswordActual: $('#inputCuentaPasswordActual'),
-  cuentaMsg: $('#cuentaMsg')
-};
 
 /* Estado de edición / selección en curso */
 let editingEntregaId = null;
@@ -1145,37 +993,6 @@ $('#btnConfirmarEliminar').addEventListener('click', () => conProteccionDoble($(
   ocultarModal('modalConfirm', 'modalConfirmBackdrop');
 }, 'Un momento…'));
 
-/* ======================== 17. HELPERS: SHEETS / MODALES / TOAST ============== */
-
-function mostrarSheet(sheetId, backdropId) {
-  document.getElementById(backdropId).classList.add('show');
-  document.getElementById(sheetId).classList.add('show');
-}
-function ocultarSheet(sheetId, backdropId) {
-  document.getElementById(backdropId).classList.remove('show');
-  document.getElementById(sheetId).classList.remove('show');
-}
-function mostrarModal(modalId, backdropId) {
-  document.getElementById(backdropId).classList.add('show');
-  document.getElementById(modalId).classList.add('show');
-}
-function ocultarModal(modalId, backdropId) {
-  document.getElementById(backdropId).classList.remove('show');
-  document.getElementById(modalId).classList.remove('show');
-}
-
-let toastTimeout = null;
-function mostrarToast(mensaje) {
-  el.toast.textContent = mensaje;
-  el.toast.classList.add('show');
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => el.toast.classList.remove('show'), 2400);
-}
-
-function ocultarLoaderInicial() {
-  el.bootLoader.style.display = 'none';
-}
-
 /* ============================ 18. AUTENTICACIÓN ============================ */
 
 let modoRegistro = false;
@@ -1237,7 +1054,7 @@ function renderSaludo(user) {
 
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    currentUid = user.uid;
+    setCurrentUid(user.uid);
     el.authScreen.style.display = 'none';
     el.appContainer.style.display = 'flex';
     el.cuentaEmail.textContent = user.email;
@@ -1246,8 +1063,8 @@ onAuthStateChanged(auth, (user) => {
     iniciarSuscripciones(user.uid);
     irAPestana(localStorage.getItem(CLAVE_ULTIMA_PESTANA) || 'inicio');
   } else {
-    currentUid = null;
-    migracionHecha = false;
+    setCurrentUid(null);
+    setMigracionHecha(false);
     detenerSuscripciones();
     limpiarGruposEntregasSemana();
     state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.meta = META_SEMANAL_DEFAULT;

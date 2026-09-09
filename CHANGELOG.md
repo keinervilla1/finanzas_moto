@@ -5,6 +5,23 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.8.2] — Modularización (paso 3: dom.js y state.js)
+
+### Agregado
+- `js/dom.js` — cache de referencias por `#id` (el objeto `el`) más los helpers
+  de UI genéricos: hojas inferiores, modales, toast y protección contra doble
+  clic.
+- `js/state.js` — estado en memoria compartido (`state`, `registros`,
+  `gastosVista`, `historialSemanas`, `unsubs`), el uid de sesión con setter y
+  los ayudantes que arman `state.entregas` sin registros fantasma.
+
+### Cambiado
+- `script.js` importa el DOM y el estado desde esos módulos. Sin cambios de
+  comportamiento (verificado con prueba de humo por DevTools Protocol).
+- Service worker: caché `v7`.
+
+---
+
 ## [1.8.1] — Modularización (paso 2: firebase.js)
 
 ### Agregado
