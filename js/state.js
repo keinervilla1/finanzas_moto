@@ -12,6 +12,7 @@ export const state = {
   gastos: [],     // gastos de la semana actual
   deudas: [],     // TODOS los domicilios con pagado:false (sin importar la semana)
   frecuentes: [],
+  clientes: [],   // personas/negocios registrados para agrupar cobros
   meta: META_SEMANAL_DEFAULT
 };
 

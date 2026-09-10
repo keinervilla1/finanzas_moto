@@ -21,6 +21,9 @@ service cloud.firestore {
       match /gastos/{gastoId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
       }
+      match /clientes/{clienteId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
     }
   }
 }

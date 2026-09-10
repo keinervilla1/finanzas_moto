@@ -51,6 +51,7 @@ Modulos (`js/`):
 | `sheets.js` | Abrir/cerrar/guardar en hojas inferiores y modales. |
 | `navigation.js` | Router de pantallas y barra inferior. |
 | `auth.js` | Login/registro y configuracion de cuenta. |
+| `clientes.js` | Clientes registrados (crear/editar/borrar en "Mas"). |
 
 ## Puesta en marcha
 
@@ -74,6 +75,7 @@ Modulos (`js/`):
 usuarios/{uid}                 -> documento pequeno: frecuentes + meta
 usuarios/{uid}/entregas/{id}   -> un documento por domicilio
 usuarios/{uid}/gastos/{id}     -> un documento por gasto
+usuarios/{uid}/clientes/{id}   -> un documento por cliente (nombre + telefono)
 ```
 
 Se usan subcolecciones (en vez de un documento con arreglos grandes) para poder

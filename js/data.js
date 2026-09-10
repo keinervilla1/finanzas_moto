@@ -137,6 +137,15 @@ function suscribirseDeudas(uid) {
   }, (err) => console.error(err));
 }
 
+/** Clientes registrados (para agrupar cobros). */
+function suscribirseClientes(uid) {
+  const q = query(coleccion(uid, 'clientes'), orderBy('nombre'));
+  unsubs.clientes = onSnapshot(q, (snap) => {
+    state.clientes = snap.docs.map(mapDoc);
+    solicitarRenderTodo();
+  }, (err) => console.error(err));
+}
+
 export function iniciarSuscripciones(uid) {
   detenerSuscripciones();
   limpiarGruposEntregasSemana();
@@ -146,6 +155,7 @@ export function iniciarSuscripciones(uid) {
   suscribirseEntregasPagadasEnSemana(uid, monday);
   suscribirseGastosSemana(uid, monday);
   suscribirseDeudas(uid);
+  suscribirseClientes(uid);
 }
 
 /** Aviso amigable (una sola vez) cuando Firestore todavía está construyendo un

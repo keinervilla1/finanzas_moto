@@ -13,7 +13,7 @@ import { state, registros, gastosVista, historialSemanas, currentUid, olvidarEnt
 import { entregasRealizadasEn, entregasPagadasEl, gastosDe, totalDe, totalesPorDia } from './calculos.js';
 import { coleccion, getDocs, query, where, orderBy, limit, startAfter } from './firebase.js';
 import { eliminarDocumento, avisarFaltaIndice, mapDoc, guardarPerfilEnNube } from './data.js';
-import { solicitarRenderTodo, registrarRenderTodo } from './render-bus.js';
+import { solicitarRenderTodo, registrarRender } from './render-bus.js';
 import { pedirConfirmacion, abrirModalDetalle, abrirSheetPago, abrirSheetFrecuente, abrirSheetGasto } from './sheets.js';
 
 /* ============================ Repintado global ========================== */
@@ -50,7 +50,7 @@ export function renderTodo() {
     cargarGastosVista();
   }
 }
-registrarRenderTodo(renderTodo);
+registrarRender(renderTodo);
 
 function renderInicio(entregasHoy, netaHoy, gastosHoy, totalSemanaVal, totalDeben, pctMeta) {
   el.gananciaHoy.textContent = formatCOP(netaHoy);

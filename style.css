@@ -232,7 +232,9 @@ ul{ list-style:none; margin:0; padding:0; }
   width:30px; height:30px; border-radius:10px; font-size:14px; cursor:pointer; flex-shrink:0;
 }
 .empty-state{ display:none; text-align:center; color:var(--text-400); font-size:13.5px; padding:26px 10px; line-height:1.5; }
-.entregas-list:empty + .empty-state{ display:block; }
+.entregas-list:empty + .empty-state,
+.frecuentes-list:empty + .empty-state,
+.historial-list:empty + .empty-state{ display:block; }
 
 /* ---------- Barra de meta (pantalla semana) ---------- */
 .goal-bar{ height:14px; background:var(--verde-50); border-radius:20px; overflow:hidden; margin-top:6px; }

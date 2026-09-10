@@ -29,6 +29,7 @@ import { solicitarRenderTodo } from './js/render-bus.js';
 import { iniciarSuscripciones, detenerSuscripciones } from './js/data.js';
 import './js/render.js';       // registra renderTodo y ata los filtros de Registros/Gastos
 import './js/sheets.js';       // ata todos los botones de hojas y modales
+import './js/clientes.js';     // sección "Clientes" en la pestaña Más
 import { irAPestana } from './js/navigation.js';
 import { renderSaludo, resetAuthUI } from './js/auth.js';
 
@@ -49,7 +50,7 @@ onAuthStateChanged(auth, (user) => {
     setMigracionHecha(false);
     detenerSuscripciones();
     limpiarGruposEntregasSemana();
-    state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.meta = META_SEMANAL_DEFAULT;
+    state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.clientes = []; state.meta = META_SEMANAL_DEFAULT;
     registros.items = []; registros.cursor = null; registros.hasMore = true;
     historialSemanas.cargado = false; historialSemanas.semanas = [];
     el.appContainer.style.display = 'none';

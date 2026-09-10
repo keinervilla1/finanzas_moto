@@ -63,6 +63,11 @@ export const el = {
   inputFrecValor: $('#inputFrecValor'),
   sheetFrecuenteTitulo: $('#sheetFrecuenteTitulo'),
 
+  listaClientes: $('#listaClientes'),
+  sheetClienteTitulo: $('#sheetClienteTitulo'),
+  inputClienteNombre: $('#inputClienteNombre'),
+  inputClienteTelefono: $('#inputClienteTelefono'),
+
   inputGastoValor: $('#inputGastoValor'),
   inputGastoDescripcion: $('#inputGastoDescripcion'),
   inputGastoFecha: $('#inputGastoFecha'),

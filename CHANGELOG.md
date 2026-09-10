@@ -5,6 +5,32 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.0] — Clientes (paso 1 de Cobros): entidad y gestión
+
+Primer paso hacia el sistema de cobros por cliente. Solo la entidad: crear,
+editar y borrar clientes. Todavía no cambia nada de agregar domicilios ni de la
+pantalla "Deben".
+
+### Agregado
+- Subcolección `usuarios/{uid}/clientes/{id}` (`nombre` + `telefono` opcional),
+  con su regla en `firestore.rules` y suscripción en tiempo real.
+- `js/clientes.js` — sección **Clientes** en la pestaña "Más": lista, y hoja
+  para crear/editar/borrar (igual que los frecuentes).
+
+### Cambiado
+- `render-bus.js` ahora admite varias tareas de repintado (antes solo una), para
+  que cada módulo que pinta algo se registre solo.
+- `style.css`: los mensajes de "lista vacía" de frecuentes, clientes e historial
+  ahora sí aparecen cuando corresponde (antes solo funcionaba en las listas de
+  domicilios).
+- Service worker: caché `v10`.
+
+### Siguiente
+- v1.9.1: elegir cliente (opcional) al agregar un domicilio.
+- v1.9.2: "Deben" pasa a "Cobros", agrupado por cliente.
+
+---
+
 ## [1.8.4] — Modularización (paso 5, final): render, hojas, navegación y auth
 
 Con este paso `script.js` deja de ser un archivo de 1400 líneas y pasa a ser un
