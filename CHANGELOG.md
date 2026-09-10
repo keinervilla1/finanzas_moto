@@ -5,6 +5,26 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.7] — Cobro por monto y abono
+
+Completa la pantalla Cobros con la segunda forma de registrar un pago.
+
+### Agregado
+- **Campo "O escribe cuánto te dio"** en la hoja de cobro. Al escribir un monto,
+  se marcan automáticamente los domicilios que quedan cubiertos por completo,
+  del más antiguo al más nuevo. Tocar el checklist vuelve al modo manual.
+- **Abono** para clientes registrados: si sobra dinero que no alcanza para otro
+  domicilio, queda guardado como abono del cliente (`clientes/{id}.abono`) y se
+  muestra en su tarjeta de Cobros. La próxima vez, la hoja arranca con ese
+  abono ya puesto en el campo de monto.
+- Para grupos de nombre libre (sin cliente registrado), el sobrante solo se
+  avisa; no se guarda.
+
+### Notas
+- Service worker: caché `v17`.
+
+---
+
 ## [1.9.6] — Pull to refresh más natural
 
 ### Corregido

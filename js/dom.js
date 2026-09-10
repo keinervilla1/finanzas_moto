@@ -78,6 +78,8 @@ export const el = {
   cobroResumen: $('#cobroResumen'),
   cobroDomicilios: $('#cobroDomicilios'),
   cobroTotal: $('#cobroTotal'),
+  inputCobroMonto: $('#inputCobroMonto'),
+  cobroNota: $('#cobroNota'),
 
   calcTotal: $('#calcTotal'),
   calcGastos: $('#calcGastos'),
