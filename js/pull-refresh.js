@@ -1,25 +1,34 @@
 /* =========================================================================
-   DOMI — Pestañita "Toca para actualizar"
-   Aparece solo cuando la lista está arriba de todo. Se toca (o se arrastra
-   hacia abajo) para recargar la app. Con el service worker "red primero" eso
-   trae la última versión desplegada.
+   DOMI — Arrastrar para actualizar
+   Estando arriba de todo, si arrastras el contenido hacia abajo, sigue tu
+   dedo con rebote y, si lo sueltas pasado el umbral, recarga la app. Con el
+   service worker "red primero" eso trae la última versión desplegada.
 
-   El gesto se hace SOBRE la pestañita (que va por encima de todo cuando está
-   visible), no sobre la lista → nunca se dispara por accidente al scrollear.
+   Para que NUNCA se confunda con un scroll:
+   - No se puede iniciar si hubo scroll en los últimos 220 ms (tiene que estar
+     quieto arriba de todo).
+   - Hay una zona muerta antes de engancharse: los toques pequeños pasan.
+   - Cualquier movimiento hacia arriba lo suelta y devuelve el control.
    ========================================================================= */
 
 import { el } from './dom.js';
 
-const UMBRAL = 55;   // px de arrastre para que el pull dispare
-const TAP_MAX = 8;   // px de movimiento por debajo de esto = fue un toque
+const REPOSO_MS = 220;   // sin scroll este tiempo para poder tirar
+const ACTIVACION = 12;   // px de dedo antes de engancharnos
+const RESIST = 0.5;      // el contenido baja la mitad de lo que baja el dedo
+const UMBRAL = 62;       // px de desplazamiento del contenido para disparar
+const MAX = 92;          // tope de desplazamiento
 
 const scroller = document.getElementById('screens');
-const tab = document.getElementById('refreshTab');
-const texto = tab.querySelector('.refresh-tab__text');
-const TXT_NORMAL = 'Toca para actualizar';
-const TXT_LISTO = 'Suelta para actualizar';
-texto.textContent = TXT_NORMAL;
+const spinner = document.getElementById('pullSpinner');
 
+let ultimoScrollMs = 0;
+scroller.addEventListener('scroll', () => { ultimoScrollMs = performance.now(); }, { passive: true });
+
+let startY = 0;
+let candidato = false;
+let activo = false;
+let offset = 0;
 let recargando = false;
 
 function bloqueado() {
@@ -27,74 +36,70 @@ function bloqueado() {
     || document.querySelector('.sheet.show, .modal.show, .sheet-backdrop.show, .modal-backdrop.show');
 }
 
-function actualizarVisibilidad() {
-  tab.classList.toggle('visible', !recargando && !bloqueado() && scroller.scrollTop < 6);
-}
-scroller.addEventListener('scroll', actualizarVisibilidad, { passive: true });
-document.addEventListener('visibilitychange', actualizarVisibilidad);
-new MutationObserver(actualizarVisibilidad).observe(el.appContainer, {
-  attributes: true, attributeFilter: ['style']
-});
-setTimeout(actualizarVisibilidad, 400);
-
-function refrescar() {
-  if (recargando) return;
-  recargando = true;
-  tab.classList.add('spin', 'lista');
-  texto.textContent = 'Actualizando…';
-  setTimeout(() => location.reload(), 350);
+function poner(px) {
+  offset = px;
+  const p = Math.min(1, px / UMBRAL);
+  scroller.style.transform = px > 0 ? `translateY(${px}px)` : '';
+  spinner.style.opacity = px > 3 ? String(p) : '0';
+  spinner.style.transform = `translateX(-50%) scale(${0.6 + p * 0.4}) rotate(${px * 3.2}deg)`;
 }
 
-/* --- Arrastre / toque sobre la pestañita --- */
-let startY = 0;
-let maxDist = 0;
-let arrastrando = false;
-let huboTouch = false;
+function animarA(px, luego) {
+  scroller.style.transition = 'transform .3s cubic-bezier(.32,.72,0,1)';
+  spinner.style.transition = 'opacity .25s ease, transform .3s ease';
+  poner(px);
+  clearTimeout(animarA._t);
+  animarA._t = setTimeout(() => {
+    scroller.style.transition = '';
+    spinner.style.transition = 'opacity .15s ease';
+    if (luego) luego();
+  }, 320);
+}
 
-tab.addEventListener('touchstart', (e) => {
-  if (recargando) return;
-  huboTouch = true;
+scroller.addEventListener('touchstart', (e) => {
+  candidato = false;
+  activo = false;
+  if (e.touches.length !== 1 || recargando || bloqueado()) return;
+  if (scroller.scrollTop > 0) return;
+  if (performance.now() - ultimoScrollMs < REPOSO_MS) return;
   startY = e.touches[0].clientY;
-  maxDist = 0;
-  arrastrando = true;
-  tab.style.transition = 'background .2s ease';
+  candidato = true;
 }, { passive: true });
 
-tab.addEventListener('touchmove', (e) => {
-  if (!arrastrando) return;
-  const d = Math.max(0, e.touches[0].clientY - startY);
-  maxDist = Math.max(maxDist, d);
-  if (d > 4) e.preventDefault();
-  const y = d <= UMBRAL ? d : UMBRAL + (d - UMBRAL) * 0.28;
-  tab.style.transform = `translateX(-50%) translateY(${Math.min(y, 66)}px)`;
-  const listo = d >= UMBRAL;
-  tab.classList.toggle('lista', listo);
-  texto.textContent = listo ? TXT_LISTO : TXT_NORMAL;
+scroller.addEventListener('touchmove', (e) => {
+  if (!candidato) return;
+  const dy = e.touches[0].clientY - startY;
+
+  if (dy <= 0 || scroller.scrollTop > 0) {
+    if (activo) animarA(0);
+    candidato = false;
+    activo = false;
+    return;
+  }
+  if (!activo) {
+    if (dy < ACTIVACION) return;
+    activo = true;
+    scroller.style.transition = '';
+    spinner.style.transition = 'none';
+  }
+  e.preventDefault();
+  const bruto = (dy - ACTIVACION) * RESIST;
+  poner(Math.min(bruto, MAX));
 }, { passive: false });
 
 function soltar() {
-  if (!arrastrando) return;
-  arrastrando = false;
-  tab.style.transition = '';
-  tab.style.transform = '';
-  if (maxDist < TAP_MAX || maxDist >= UMBRAL) {
-    refrescar();
+  if (!activo) { candidato = false; return; }
+  candidato = false;
+  activo = false;
+
+  if (offset >= UMBRAL && !recargando) {
+    recargando = true;
+    spinner.classList.add('spin');
+    animarA(UMBRAL);
+    setTimeout(() => location.reload(), 550);
   } else {
-    tab.classList.remove('lista');
-    texto.textContent = TXT_NORMAL;
+    animarA(0);
   }
 }
-tab.addEventListener('touchend', soltar);
-tab.addEventListener('touchcancel', () => {
-  arrastrando = false;
-  tab.style.transition = '';
-  tab.style.transform = '';
-  tab.classList.remove('lista');
-  texto.textContent = TXT_NORMAL;
-});
-
-/* --- Clic con mouse (escritorio): el touch ya se maneja arriba --- */
-tab.addEventListener('click', () => {
-  if (huboTouch) { huboTouch = false; return; }
-  refrescar();
-});
+scroller.addEventListener('touchend', soltar);
+scroller.addEventListener('touchcancel', () => { if (activo) animarA(0); candidato = false; activo = false; });

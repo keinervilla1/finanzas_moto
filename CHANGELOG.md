@@ -5,6 +5,23 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.11] — Arrastrar para actualizar (el contenido sigue el dedo)
+
+Se quitó el botón/pestañita. Vuelve el gesto, pero bien hecho:
+
+### Cambiado
+- Estando arriba de todo, al **arrastrar el contenido hacia abajo** este sigue
+  el dedo con rebote (resistencia), aparece un spinner que gira con el gesto, y
+  al soltar pasado el umbral, recarga. Antes solo se movía un iconito y por eso
+  se sentía "muerto".
+- **No se puede iniciar mientras scrolleas**: la lista tiene que estar quieta
+  arriba de todo (sin scroll en los últimos 220 ms). Subir y bajar rápido ya no
+  cuenta como refrescar.
+- Cualquier movimiento hacia arriba suelta el gesto y devuelve el scroll.
+- Service worker: caché `v21`.
+
+---
+
 ## [1.9.10] — La pestañita de actualizar ahora sí responde
 
 ### Corregido

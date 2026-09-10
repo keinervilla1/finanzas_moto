@@ -81,13 +81,10 @@
     </button>
   </header>
 
-  <!-- ---------- PESTAÑITA "DESLIZA PARA ACTUALIZAR" ---------- -->
-  <button class="refresh-tab" id="refreshTab" type="button" aria-label="Actualizar la app">
-    <svg class="refresh-tab__icon" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M20 11a8 8 0 1 0-.7 4"/><path d="M20 4v7h-7"/>
-    </svg>
-    <span class="refresh-tab__text">Toca para actualizar</span>
-  </button>
+  <!-- ---------- SPINNER DE "ARRASTRAR PARA ACTUALIZAR" ---------- -->
+  <div class="pull-spinner" id="pullSpinner" aria-hidden="true">
+    <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-.7 4"/><path d="M20 4v7h-7"/></svg>
+  </div>
 
   <!-- ---------- CONTENIDO PRINCIPAL (pantallas) ---------- -->
   <main class="screens" id="screens">
@@ -281,7 +278,7 @@
 
       <div class="section-head"><h2>Aplicación</h2></div>
       <button class="btn-secondary" id="btnEditarMetaDesdeMas">🎯 Meta semanal</button>
-      <p class="app-version">Domi v1.9.10</p>
+      <p class="app-version">Domi v1.9.11</p>
 
     </section>
 

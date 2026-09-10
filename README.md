@@ -54,7 +54,7 @@ Modulos (`js/`):
 | `clientes.js` | Clientes registrados (crear/editar/borrar en "Mas"). |
 | `cobros.js` | Pantalla "Cobros": agrupa deudas por cliente y registra pagos. |
 | `actualizacion.js` | Registro del service worker + aviso de version nueva. |
-| `pull-refresh.js` | Pestañita "Desliza para actualizar" (recarga la app). |
+| `pull-refresh.js` | Arrastrar el contenido hacia abajo desde el tope recarga la app. |
 
 ## Puesta en marcha
 
