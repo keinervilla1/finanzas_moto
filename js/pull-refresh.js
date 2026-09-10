@@ -1,33 +1,32 @@
 /* =========================================================================
    DOMI — Arrastrar para actualizar
-   Estando arriba de todo, si arrastras el contenido hacia abajo, sigue tu
-   dedo con rebote y, si lo sueltas pasado el umbral, recarga la app. Con el
-   service worker "red primero" eso trae la última versión desplegada.
+   Estando arriba de todo, arrastra el contenido hacia abajo: sigue tu dedo con
+   rebote y, si lo sueltas pasado el umbral, recarga la app.
 
-   Para que NUNCA se confunda con un scroll:
-   - No se puede iniciar si hubo scroll en los últimos 220 ms (tiene que estar
-     quieto arriba de todo).
-   - Hay una zona muerta antes de engancharse: los toques pequeños pasan.
-   - Cualquier movimiento hacia arriba lo suelta y devuelve el control.
+   Para no confundirse con un scroll:
+   - El toque tiene que EMPEZAR con la lista arriba de todo (scrollTop 0).
+   - Solo se engancha si el arrastre es "de verdad": pasó cierta distancia y
+     tardó lo suyo. Un flick / scroll con impulso cubre esa distancia en un
+     instante, así que no cuenta.
+   - Cualquier movimiento hacia arriba lo suelta.
    ========================================================================= */
 
 import { el } from './dom.js';
 
-const REPOSO_MS = 220;   // sin scroll este tiempo para poder tirar
-const ACTIVACION = 12;   // px de dedo antes de engancharnos
+const DIST_MIN = 24;     // px de dedo antes de considerar "enganchar"
+const V_MAX = 1.5;       // px/ms del arranque: por encima es un flick (scroll), no un pull
 const RESIST = 0.5;      // el contenido baja la mitad de lo que baja el dedo
-const UMBRAL = 62;       // px de desplazamiento del contenido para disparar
-const MAX = 92;          // tope de desplazamiento
+const UMBRAL = 58;       // px de desplazamiento del contenido para disparar
+const MAX = 88;
 
 const scroller = document.getElementById('screens');
 const spinner = document.getElementById('pullSpinner');
 
-let ultimoScrollMs = 0;
-scroller.addEventListener('scroll', () => { ultimoScrollMs = performance.now(); }, { passive: true });
-
 let startY = 0;
-let candidato = false;
-let activo = false;
+let startT = 0;
+let candidato = false;   // el toque empezó bien (arriba de todo)
+let activo = false;      // ya estamos moviendo el contenido
+let abortado = false;
 let offset = 0;
 let recargando = false;
 
@@ -40,8 +39,9 @@ function poner(px) {
   offset = px;
   const p = Math.min(1, px / UMBRAL);
   scroller.style.transform = px > 0 ? `translateY(${px}px)` : '';
-  spinner.style.opacity = px > 3 ? String(p) : '0';
-  spinner.style.transform = `translateX(-50%) scale(${0.6 + p * 0.4}) rotate(${px * 3.2}deg)`;
+  spinner.style.opacity = px > 3 ? String(0.35 + p * 0.65) : '0';
+  spinner.style.transform = `translateX(-50%) scale(${0.6 + p * 0.4}) rotate(${px * 3.4}deg)`;
+  spinner.classList.toggle('armado', px >= UMBRAL);
 }
 
 function animarA(px, luego) {
@@ -59,37 +59,42 @@ function animarA(px, luego) {
 scroller.addEventListener('touchstart', (e) => {
   candidato = false;
   activo = false;
+  abortado = false;
   if (e.touches.length !== 1 || recargando || bloqueado()) return;
-  if (scroller.scrollTop > 0) return;
-  if (performance.now() - ultimoScrollMs < REPOSO_MS) return;
+  if (scroller.scrollTop > 0) return;      // no se puede empezar a media lista
   startY = e.touches[0].clientY;
+  startT = performance.now();
   candidato = true;
 }, { passive: true });
 
 scroller.addEventListener('touchmove', (e) => {
-  if (!candidato) return;
+  if (!candidato || abortado) return;
+
   const dy = e.touches[0].clientY - startY;
 
+  // Movimiento hacia arriba, o la lista se movió: no es un pull.
   if (dy <= 0 || scroller.scrollTop > 0) {
-    if (activo) animarA(0);
-    candidato = false;
-    activo = false;
+    if (activo) { animarA(0); activo = false; }
+    abortado = true;
     return;
   }
+
   if (!activo) {
-    if (dy < ACTIVACION) return;
+    if (dy < DIST_MIN) return;                       // aún poco: dejar scrollear
+    const v = dy / Math.max(1, performance.now() - startT); // px/ms del arranque
+    if (v > V_MAX) { abortado = true; return; }      // fue un flick, no un pull
     activo = true;
     scroller.style.transition = '';
     spinner.style.transition = 'none';
   }
+
   e.preventDefault();
-  const bruto = (dy - ACTIVACION) * RESIST;
-  poner(Math.min(bruto, MAX));
+  poner(Math.min((dy - DIST_MIN) * RESIST, MAX));
 }, { passive: false });
 
 function soltar() {
-  if (!activo) { candidato = false; return; }
   candidato = false;
+  if (!activo) return;
   activo = false;
 
   if (offset >= UMBRAL && !recargando) {
@@ -102,4 +107,8 @@ function soltar() {
   }
 }
 scroller.addEventListener('touchend', soltar);
-scroller.addEventListener('touchcancel', () => { if (activo) animarA(0); candidato = false; activo = false; });
+scroller.addEventListener('touchcancel', () => {
+  candidato = false;
+  if (activo) animarA(0);
+  activo = false;
+});

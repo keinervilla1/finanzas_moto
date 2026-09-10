@@ -5,6 +5,21 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.12] — Arrastrar para actualizar: filtro de velocidad
+
+### Corregido
+- Seguía enganchándose con movimientos bruscos o al scrollear rápido. Ahora:
+  - El toque **tiene que empezar con la lista arriba de todo** (no a media
+    lista, cuando ya vienes con impulso).
+  - **Filtro de velocidad**: si el arranque del arrastre es rápido (un flick /
+    scroll con impulso cubre la distancia en un instante), NO se engancha —
+    hay que tirar despacio y deliberado.
+  - Cualquier movimiento hacia arriba lo suelta al instante.
+  - Al pasar el umbral, el spinner se pone verde ("suelta y recarga").
+- Service worker: caché `v22`.
+
+---
+
 ## [1.9.11] — Arrastrar para actualizar (el contenido sigue el dedo)
 
 Se quitó el botón/pestañita. Vuelve el gesto, pero bien hecho:
