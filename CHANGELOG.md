@@ -5,6 +5,23 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.1] — Service worker: "red primero" para la app
+
+### Corregido
+- **Las versiones nuevas no se veían sin borrar la caché a mano.** El service
+  worker usaba "caché primero" para todo, así que seguía sirviendo la versión
+  vieja aunque el servidor ya tuviera la nueva. Ahora:
+  - HTML / JS / CSS del propio sitio → **red primero** (con internet siempre ves
+    lo último; sin internet, respaldo desde caché).
+  - Iconos y manifest → caché primero.
+  - Firebase SDK y fuentes de Google → caché primero (sus URLs llevan versión).
+  - Llamadas a la API de Firestore/Auth → ya no se interceptan (antes se
+    cacheaban por error).
+- Caché `v11`. **Esta es la última vez que hay que forzar la actualización a
+  mano**; de aquí en adelante cada deploy se ve solo al recargar.
+
+---
+
 ## [1.9.0] — Clientes (paso 1 de Cobros): entidad y gestión
 
 Primer paso hacia el sistema de cobros por cliente. Solo la entidad: crear,
