@@ -1,23 +1,24 @@
 /* =========================================================================
    DOMI — Pull to refresh
-   Arrastrar hacia abajo desde el tope de la pantalla recarga la app (como en
-   cualquier app nativa). Con el service worker "red primero" esto trae también
-   la última versión desplegada.
+   Arrastrar hacia abajo desde el tope recarga la app. Con el service worker
+   "red primero" esto trae también la última versión desplegada.
 
-   Diseño para que NO estorbe el scroll normal:
-   - Solo cuenta si el touch empieza con la lista arriba de todo.
-   - Hay una "zona muerta" (ACTIVACION): mientras el arrastre sea menor que eso,
-     no bloqueamos nada y el scroll funciona igual.
-   - Si el dedo se mueve hacia arriba en cualquier momento, se suelta el gesto y
-     el scroll vuelve a mandar.
-   - El umbral para disparar la recarga es largo y a propósito.
+   Está pensado para NO confundirse nunca con un scroll:
+   - Solo se puede iniciar si la lista está quieta arriba de todo (sin scroll
+     en los últimos 250 ms).
+   - Los movimientos rápidos (flicks) se ignoran: un pull es lento y deliberado.
+   - Cualquier movimiento hacia arriba cancela el gesto para siempre en ese
+     toque y devuelve el control al scroll.
+   - El umbral para disparar es largo (130 px de arrastre real).
    ========================================================================= */
 
 import { el } from './dom.js';
 
-const ACTIVACION = 16;   // px de arrastre antes de "engancharnos"
-const UMBRAL = 115;      // px (ya descontada la activación) para disparar
-const MAX = 165;         // tope visual del arrastre
+const REPOSO_MS = 250;     // hay que estar sin scrollear este tiempo para poder tirar
+const ACTIVACION = 40;     // px de arrastre lento antes de "engancharnos"
+const UMBRAL = 130;        // px (ya descontada la activación) para disparar la recarga
+const MAX = 190;
+const V_MAX = 1.1;         // px/ms: por encima de esto es un flick, no un pull
 
 const scroller = document.getElementById('screens');
 
@@ -26,9 +27,14 @@ indicador.className = 'pull-refresh';
 indicador.innerHTML = '<div class="pull-refresh__spinner"></div>';
 document.body.appendChild(indicador);
 
+let ultimoScrollMs = 0;
+scroller.addEventListener('scroll', () => { ultimoScrollMs = performance.now(); }, { passive: true });
+
 let startY = 0;
-let candidato = false;   // touchstart válido (lista arriba de todo), a la espera
-let activo = false;      // ya es un pull: bloqueamos el scroll y movemos el indicador
+let prevY = 0;
+let prevT = 0;
+let candidato = false;
+let activo = false;
 let distancia = 0;
 let recargando = false;
 
@@ -38,10 +44,10 @@ function bloqueado() {
 }
 
 function pintar(d) {
-  const visual = d <= UMBRAL ? d : UMBRAL + (d - UMBRAL) * 0.4;
+  const visual = d <= UMBRAL ? d : UMBRAL + (d - UMBRAL) * 0.35;
   const y = Math.min(visual, MAX);
-  indicador.style.transform = `translateX(-50%) translateY(${Math.max(-44, y * 0.6 - 44)}px)`;
-  indicador.style.opacity = String(Math.min(1, d / (UMBRAL * 0.6)));
+  indicador.style.transform = `translateX(-50%) translateY(${Math.max(-44, y * 0.55 - 44)}px)`;
+  indicador.style.opacity = String(Math.min(1, d / (UMBRAL * 0.55)));
   indicador.classList.toggle('lista', d >= UMBRAL);
 }
 
@@ -53,7 +59,9 @@ function ocultarIndicador() {
   setTimeout(() => { indicador.style.transition = ''; }, 260);
 }
 
-function soltarGesto() {
+/** Suelta el gesto y, si estábamos mostrando el indicador, lo esconde. */
+function cancelar() {
+  if (activo) ocultarIndicador();
   candidato = false;
   activo = false;
   distancia = 0;
@@ -62,8 +70,12 @@ function soltarGesto() {
 scroller.addEventListener('touchstart', (e) => {
   candidato = false;
   activo = false;
-  if (e.touches.length !== 1 || scroller.scrollTop > 0 || bloqueado() || recargando) return;
-  startY = e.touches[0].clientY;
+  if (e.touches.length !== 1 || recargando || bloqueado()) return;
+  if (scroller.scrollTop > 0) return;
+  if (performance.now() - ultimoScrollMs < REPOSO_MS) return; // aún scrolleando
+  const y = e.touches[0].clientY;
+  startY = prevY = y;
+  prevT = performance.now();
   distancia = 0;
   candidato = true;
 }, { passive: true });
@@ -71,31 +83,35 @@ scroller.addEventListener('touchstart', (e) => {
 scroller.addEventListener('touchmove', (e) => {
   if (!candidato) return;
 
-  const dy = e.touches[0].clientY - startY;
+  const now = performance.now();
+  const y = e.touches[0].clientY;
+  const dy = y - startY;
+  const v = (y - prevY) / Math.max(1, now - prevT); // px/ms del último tramo
+  prevY = y;
+  prevT = now;
 
-  // Movimiento hacia arriba, o la lista ya se movió: no es un pull → devolver el
-  // control al scroll y no volver a interferir en este toque.
-  if (dy <= 0 || scroller.scrollTop > 0) {
-    if (activo) ocultarIndicador();
-    soltarGesto();
-    return;
-  }
+  // Hacia arriba, o la lista se movió: no es un pull. Cancelar de forma
+  // definitiva para este toque.
+  if (dy <= 0 || scroller.scrollTop > 0) { cancelar(); return; }
 
-  // Todavía dentro de la zona muerta: dejar que el navegador scrollee normal.
+  // Todavía en la zona muerta.
   if (!activo) {
+    // Flick rápido hacia abajo → es un intento de scroll, no un pull.
+    if (v > V_MAX) { candidato = false; return; }
     if (dy < ACTIVACION) return;
     activo = true;
   }
 
-  e.preventDefault();                 // a partir de aquí sí mandamos nosotros
+  e.preventDefault();
   distancia = dy - ACTIVACION;
   pintar(distancia);
 }, { passive: false });
 
 function alSoltar() {
-  if (!activo) { soltarGesto(); return; }
+  if (!activo) { candidato = false; return; }
   const disparar = distancia >= UMBRAL;
-  soltarGesto();
+  candidato = false;
+  activo = false;
 
   if (disparar) {
     recargando = true;
@@ -107,6 +123,7 @@ function alSoltar() {
   } else {
     ocultarIndicador();
   }
+  distancia = 0;
 }
 scroller.addEventListener('touchend', alSoltar);
 scroller.addEventListener('touchcancel', alSoltar);

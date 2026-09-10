@@ -5,6 +5,20 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.8] — Pull to refresh que ya no choca con el scroll
+
+### Corregido
+- Subir y bajar rápido la pantalla ya no se toma como "refrescar". Ahora el
+  gesto de recarga:
+  - **No se puede iniciar mientras estás scrolleando**: la lista tiene que
+    estar quieta arriba de todo (sin scroll en los últimos 250 ms).
+  - **Ignora los movimientos rápidos** (flicks): un pull es lento y deliberado.
+  - Cualquier movimiento hacia arriba lo cancela de una y devuelve el scroll.
+  - Umbral más largo: 40 px de "zona muerta" + 130 px de arrastre real.
+- Service worker: caché `v18`.
+
+---
+
 ## [1.9.7] — Cobro por monto y abono
 
 Completa la pantalla Cobros con la segunda forma de registrar un pago.
