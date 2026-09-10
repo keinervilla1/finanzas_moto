@@ -51,6 +51,8 @@ export const el = {
   totalGastosFiltro: $('#totalGastosFiltro'),
 
   chipsFrecuentes: $('#chipsFrecuentes'),
+  chipsClientes: $('#chipsClientes'),
+  bloqueClientes: $('#bloqueClientes'),
   sheetTitulo: $('#sheetTitulo'),
   inputNombre: $('#inputNombre'),
   inputValor: $('#inputValor'),

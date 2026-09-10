@@ -23,6 +23,7 @@ let editingEntregaOriginal = null;
 let editingFrecuenteId = null;
 let editingGastoId = null;
 let selectedFrecuenteId = null;
+let selectedClienteId = null;
 let confirmCallback = null;
 let tipoSeleccionado = 'normal';
 let pagadoSeleccionado = 'si';
@@ -63,10 +64,22 @@ function actualizarVisibilidadCamposPago() {
   el.bloqueMedioPago.style.display = pagadoSeleccionado === 'si' ? 'block' : 'none';
 }
 
+/** Un frecuente y un cliente son dos formas de decir "para quién es": elegir
+ *  uno deselecciona el otro (ambos rellenan el nombre). */
+function limpiarSeleccionFrecuente() {
+  selectedFrecuenteId = null;
+  document.querySelectorAll('#chipsFrecuentes .chip').forEach(c => c.classList.remove('selected'));
+}
+function limpiarSeleccionCliente() {
+  selectedClienteId = null;
+  document.querySelectorAll('#chipsClientes .chip').forEach(c => c.classList.remove('selected'));
+}
+
 function abrirSheetEntrega(entregaExistente) {
   editingEntregaId = entregaExistente ? entregaExistente.id : null;
   editingEntregaOriginal = entregaExistente || null;
   selectedFrecuenteId = null;
+  selectedClienteId = entregaExistente ? (entregaExistente.clienteId || null) : null;
   el.sheetTitulo.textContent = entregaExistente ? 'Editar domicilio' : 'Agregar domicilio';
 
   el.chipsFrecuentes.innerHTML = '';
@@ -79,6 +92,7 @@ function abrirSheetEntrega(entregaExistente) {
       chip.className = 'chip';
       chip.textContent = `${f.nombre} · ${formatCOP(f.valor)}`;
       chip.addEventListener('click', () => {
+        limpiarSeleccionCliente();
         selectedFrecuenteId = f.id;
         el.inputNombre.value = f.nombre;
         el.inputValor.value = f.valor;
@@ -88,6 +102,27 @@ function abrirSheetEntrega(entregaExistente) {
       el.chipsFrecuentes.appendChild(chip);
     });
   }
+
+  // Chips de clientes registrados (opcional). Si no hay ninguno, se oculta.
+  el.chipsClientes.innerHTML = '';
+  el.bloqueClientes.style.display = state.clientes.length === 0 ? 'none' : 'block';
+  state.clientes.forEach(c => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip' + (c.id === selectedClienteId ? ' selected' : '');
+    chip.textContent = `👤 ${c.nombre}`;
+    chip.addEventListener('click', () => {
+      const yaEstaba = c.id === selectedClienteId;
+      limpiarSeleccionCliente();
+      if (!yaEstaba) {
+        limpiarSeleccionFrecuente();
+        selectedClienteId = c.id;
+        el.inputNombre.value = c.nombre;
+        chip.classList.add('selected');
+      }
+    });
+    el.chipsClientes.appendChild(chip);
+  });
 
   if (entregaExistente) {
     el.inputNombre.value = entregaExistente.nombre;
@@ -131,6 +166,7 @@ $('#btnGuardarDomicilio').addEventListener('click', () => conProteccionDoble($('
   const datos = {
     nombre, valor, hora, descripcion,
     tipo: tipoSeleccionado,
+    clienteId: selectedClienteId || null,
     pagado,
     medioPago: pagado ? medioPagoSeleccionado : null,
     fechaPago: pagado ? hoyKey : null

@@ -5,6 +5,24 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.4] — Elegir cliente al agregar un domicilio
+
+### Agregado
+- En la hoja de **agregar / editar domicilio**, debajo de los frecuentes, una
+  fila de chips **"Cliente (opcional)"** con los clientes registrados. Al elegir
+  uno se rellena el nombre y el domicilio queda vinculado (`entrega.clienteId`).
+  Si no hay clientes registrados, la fila no aparece.
+- Elegir un frecuente o un cliente deselecciona al otro (ambos dicen "para
+  quién es"). Tocar de nuevo el cliente elegido lo desvincula.
+
+### Notas
+- Los domicilios viejos y los que se guarden sin elegir cliente siguen igual
+  (nombre libre). El `clienteId` todavía no se usa en ninguna pantalla — eso
+  llega en v1.9.5 (pantalla Cobros).
+- Service worker: caché `v14`.
+
+---
+
 ## [1.9.3] — Pull to refresh
 
 ### Agregado
