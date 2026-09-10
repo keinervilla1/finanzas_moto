@@ -107,7 +107,7 @@ ul{ list-style:none; margin:0; padding:0; }
 }
 
 /* ---------- Pantallas ---------- */
-.screens{ flex:1; padding:0 20px 110px; overflow-y:auto; }
+.screens{ flex:1; padding:0 20px 110px; overflow-y:auto; overscroll-behavior-y:contain; }
 .screen{ display:none; animation:fadeUp .35s ease; }
 .screen.active{ display:block; }
 @keyframes fadeUp{ from{ opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
@@ -398,6 +398,22 @@ ul{ list-style:none; margin:0; padding:0; }
   max-width:80%; text-align:center;
 }
 .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ---------- Pull to refresh ---------- */
+.pull-refresh{
+  position:fixed; left:50%; top:0; transform:translateX(-50%) translateY(-44px);
+  width:36px; height:36px; border-radius:50%;
+  background:var(--card); box-shadow:var(--shadow-md);
+  display:flex; align-items:center; justify-content:center;
+  z-index:35; opacity:0; pointer-events:none;
+}
+.pull-refresh__spinner{
+  width:18px; height:18px; border-radius:50%;
+  border:2.5px solid var(--verde-100); border-top-color:var(--verde-600);
+  transition:transform .12s linear;
+}
+.pull-refresh.lista .pull-refresh__spinner{ transform:rotate(180deg); border-top-color:var(--verde-700); }
+.pull-refresh.spin .pull-refresh__spinner{ animation:girar .7s linear infinite; }
 
 /* ---------- Banner: nueva versión disponible ---------- */
 .update-banner{

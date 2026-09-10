@@ -1,16 +1,9 @@
 /* =========================================================================
    DOMI — Actualización de la app
-   Registra el service worker y avisa cuando hay una versión nueva lista, con
-   un banner "Actualizar". También ata el botón manual "Recargar" de la
-   pestaña "Más" (útil en la PWA instalada, que no tiene barra de navegador).
+   Registra el service worker y avisa con un banner "Actualizar" cuando hay una
+   versión nueva desplegada. Para recargar a mano está el pull-to-refresh
+   (js/pull-refresh.js).
    ========================================================================= */
-
-let recargando = false;
-function recargar() {
-  if (recargando) return;
-  recargando = true;
-  location.reload();
-}
 
 let banner;
 function mostrarBannerActualizar() {
@@ -18,14 +11,10 @@ function mostrarBannerActualizar() {
   banner = document.createElement('div');
   banner.className = 'update-banner';
   banner.innerHTML = '<span>Hay una versión nueva de Domi</span><button type="button">Actualizar</button>';
-  banner.querySelector('button').addEventListener('click', recargar);
+  banner.querySelector('button').addEventListener('click', () => location.reload());
   document.body.appendChild(banner);
   requestAnimationFrame(() => banner.classList.add('show'));
 }
-
-// Botón manual (siempre disponible, aunque no haya actualización pendiente).
-const btnRecargar = document.getElementById('btnRecargarApp');
-if (btnRecargar) btnRecargar.addEventListener('click', recargar);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {

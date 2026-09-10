@@ -53,6 +53,7 @@ Modulos (`js/`):
 | `auth.js` | Login/registro y configuracion de cuenta. |
 | `clientes.js` | Clientes registrados (crear/editar/borrar en "Mas"). |
 | `actualizacion.js` | Registro del service worker + aviso de version nueva. |
+| `pull-refresh.js` | Arrastrar hacia abajo desde el tope recarga la app. |
 
 ## Puesta en marcha
 

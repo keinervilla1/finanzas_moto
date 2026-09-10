@@ -31,6 +31,7 @@ import './js/render.js';       // registra renderTodo y ata los filtros de Regis
 import './js/sheets.js';       // ata todos los botones de hojas y modales
 import './js/clientes.js';     // sección "Clientes" en la pestaña Más
 import './js/actualizacion.js'; // registro del SW + aviso de nueva versión
+import './js/pull-refresh.js';  // arrastrar hacia abajo para recargar
 import { irAPestana } from './js/navigation.js';
 import { renderSaludo, resetAuthUI } from './js/auth.js';
 
