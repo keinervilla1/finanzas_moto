@@ -5,6 +5,21 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.6] — Pull to refresh más natural
+
+### Corregido
+- El pull-to-refresh de v1.9.3 se enganchaba con muy poco arrastre y bloqueaba
+  el scroll normal (se sentía "pegado" al intentar volver a subir, y recargaba
+  casi con cualquier gesto). Ahora:
+  - **Zona muerta** de 16 px antes de activarse: los toques y scrolls pequeños
+    funcionan igual que siempre, sin interferencia.
+  - **Umbral más largo** (115 px de arrastre real) para disparar la recarga.
+  - Si el dedo se mueve hacia arriba en cualquier momento, el gesto se suelta al
+    instante y el scroll vuelve a mandar.
+- Service worker: caché `v16`.
+
+---
+
 ## [1.9.5] — Pantalla Cobros (agrupada por cliente)
 
 "Deben" pasa a llamarse **Cobros** y deja de ser una lista plana de domicilios.
