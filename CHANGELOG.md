@@ -5,6 +5,20 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.10] — La pestañita de actualizar ahora sí responde
+
+### Corregido
+- La pestañita de v1.9.9 se veía pero **no reaccionaba**: estaba por detrás de
+  la barra superior (z-index menor), así que casi toda su área quedaba tapada y
+  los toques caían en la barra o en la tarjeta. Ahora va **por encima de todo**
+  cuando está visible, es un botón verde más grande, y basta con **tocarla**
+  (arrastrar hacia abajo sigue funcionando).
+- Mejor detección del toque: un toque con temblorcito de dedo ya no se queda
+  "a medias".
+- Service worker: caché `v20`.
+
+---
+
 ## [1.9.9] — "Desliza para actualizar" como pestañita visible
 
 ### Cambiado
