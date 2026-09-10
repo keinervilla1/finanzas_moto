@@ -14,7 +14,7 @@ import { entregasRealizadasEn, entregasPagadasEl, gastosDe, totalDe, totalesPorD
 import { coleccion, getDocs, query, where, orderBy, limit, startAfter } from './firebase.js';
 import { eliminarDocumento, avisarFaltaIndice, mapDoc, guardarPerfilEnNube } from './data.js';
 import { solicitarRenderTodo, registrarRender } from './render-bus.js';
-import { pedirConfirmacion, abrirModalDetalle, abrirSheetPago, abrirSheetFrecuente, abrirSheetGasto } from './sheets.js';
+import { pedirConfirmacion, abrirModalDetalle, abrirSheetFrecuente, abrirSheetGasto } from './sheets.js';
 
 /* ============================ Repintado global ========================== */
 
@@ -40,7 +40,7 @@ export function renderTodo() {
   renderInicio(entregasHoy, netaHoy, gastosHoy, totalSemanaVal, totalDeben, pctMeta);
   renderSemana(dias, totalSemanaVal, totalGastosSemanaVal, pctMeta, hoyKey);
   renderFrecuentes();
-  renderDeben(totalDeben);
+  // La pantalla Cobros se pinta desde js/cobros.js (registrado en render-bus).
 
   // Si la pantalla Gastos está abierta y muestra un rango que vive en memoria
   // (Hoy / Semana), lo refrescamos también; los rangos Mes/Todo son consultas
@@ -167,19 +167,6 @@ function renderFrecuentes() {
       });
     });
     el.listaFrecuentes.appendChild(li);
-  });
-}
-
-function renderDeben(totalDeben) {
-  el.totalDebenHeader.textContent = formatCOP(totalDeben);
-  el.badgeDeben.textContent = state.deudas.length;
-  el.listaDeben.innerHTML = '';
-  state.deudas.forEach(deuda => {
-    const li = crearItemEntrega(deuda, {
-      sinBorrar: false,
-      onClick: (d) => abrirSheetPago(d)
-    });
-    el.listaDeben.appendChild(li);
   });
 }
 

@@ -5,6 +5,35 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.5] — Pantalla Cobros (agrupada por cliente)
+
+"Deben" pasa a llamarse **Cobros** y deja de ser una lista plana de domicilios.
+
+### Cambiado
+- **La pantalla agrupa los domicilios sin pagar por cliente.** Cada tarjeta
+  muestra el cliente, cuántos domicilios debe y el total. Se agrupa por
+  `clienteId` (si el domicilio se vinculó a un cliente) o, si no, por el
+  nombre escrito — así los datos viejos siguen funcionando.
+- **Registrar pago**: tocar un cliente abre una hoja con la lista de sus
+  domicilios pendientes, todos marcados por defecto ("pagó todo"). Se
+  desmarca lo que no pagó, se elige medio de pago y listo: los marcados
+  quedan pagados con fecha de hoy y cuentan como ingreso.
+- Textos: pestaña "Deben" → "Cobros"; chip de Inicio "Te deben" → "Por cobrar".
+
+### Quitado
+- La hoja "Marcar como pagado" de un solo domicilio (v1.4): la reemplaza la
+  hoja de cobro por cliente. `js/cobros.js` nuevo; se limpió el código muerto
+  en `sheets.js` y `render.js`.
+
+### Pendiente (v1.9.6)
+- Campo de "monto recibido" en la hoja de cobro (paga del más antiguo al más
+  nuevo) y abono pendiente para clientes registrados.
+
+### Notas
+- Service worker: caché `v15`.
+
+---
+
 ## [1.9.4] — Elegir cliente al agregar un domicilio
 
 ### Agregado

@@ -111,7 +111,7 @@
         </div>
         <div class="stat-chip stat-chip--warn" id="chipDeben">
           <p class="stat-chip__value" id="totalDebenMini">$0</p>
-          <p class="stat-chip__label">Te deben</p>
+          <p class="stat-chip__label">Por cobrar</p>
         </div>
       </div>
 
@@ -201,18 +201,18 @@
       <button class="btn-secondary" id="btnCargarMasRegistros" style="display:none">Cargar más</button>
     </section>
 
-    <!-- ===================== PANTALLA: DEBEN ===================== -->
+    <!-- ===================== PANTALLA: COBROS ===================== -->
     <section class="screen" id="screen-deben">
       <div class="card total-semana total-semana--warn">
-        <span>Total que te deben</span>
+        <span>Total por cobrar</span>
         <strong id="totalDebenHeader">$0</strong>
       </div>
       <div class="section-head" style="margin-top:4px">
-        <h2>Pendientes de pago</h2>
+        <h2>Clientes con saldo</h2>
         <span class="pill" id="badgeDeben">0</span>
       </div>
       <ul class="entregas-list" id="listaDeben"><!-- JS --></ul>
-      <p class="empty-state" id="emptyDeben">No tienes deudas pendientes por cobrar 🎉</p>
+      <p class="empty-state" id="emptyDeben">No tienes cobros pendientes 🎉</p>
     </section>
 
     <!-- ===================== PANTALLA: GASTOS ===================== -->
@@ -273,7 +273,7 @@
 
       <div class="section-head"><h2>Aplicación</h2></div>
       <button class="btn-secondary" id="btnEditarMetaDesdeMas">🎯 Meta semanal</button>
-      <p class="app-version">Domi v1.9.4</p>
+      <p class="app-version">Domi v1.9.5</p>
 
     </section>
 
@@ -295,7 +295,7 @@
     </button>
     <button class="tabbar__item" data-screen="deben">
       <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5.5c0-1.9-2.2-3.5-5-3.5S7 3.6 7 5.5 9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5"/></svg>
-      <span>Deben</span>
+      <span>Cobros</span>
     </button>
     <button class="tabbar__item" data-screen="frecuentes">
       <svg viewBox="0 0 24 24"><path d="M20 7h-3.2l-1.6-2.4A2 2 0 0 0 13.5 3.6h-3a2 2 0 0 0-1.7 1L7.2 7H4a1 1 0 0 0 0 2h1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9h1a1 1 0 0 0 0-2ZM12 17a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/></svg>
@@ -443,23 +443,31 @@
   </div>
 </div>
 
-<!-- ============ SHEET: MARCAR DEUDA COMO PAGADA ============ -->
-<div class="sheet-backdrop" id="sheetBackdropPago"></div>
-<div class="sheet" id="sheetPago">
+<!-- ============ SHEET: REGISTRAR COBRO DE UN CLIENTE ============ -->
+<div class="sheet-backdrop" id="sheetBackdropCobro"></div>
+<div class="sheet" id="sheetCobro">
   <div class="sheet__handle"></div>
-  <h3 class="sheet__title">Marcar como pagado</h3>
-  <p class="hint" id="pagoResumen">—</p>
+  <h3 class="sheet__title">Registrar pago</h3>
+  <p class="hint" id="cobroResumen">—</p>
+
+  <span class="field__label">¿Qué domicilios te pagó?</span>
+  <ul class="cobro-list" id="cobroDomicilios"><!-- JS --></ul>
+
+  <div class="card total-semana total-semana--warn cobro-total">
+    <span>Total a registrar</span>
+    <strong id="cobroTotal">$0</strong>
+  </div>
 
   <span class="field__label">Medio de pago</span>
-  <div class="segmented" id="segmentoMedioPagoConfirmar">
+  <div class="segmented" id="segmentoMedioPagoCobro">
     <button type="button" class="segmented__opt selected" data-valor="efectivo">Efectivo</button>
     <button type="button" class="segmented__opt" data-valor="transferencia">Transferencia</button>
   </div>
-  <p class="hint">Se contabilizará como ingreso el día de hoy.</p>
+  <p class="hint">Se contabiliza como ingreso el día de hoy.</p>
 
   <div class="sheet__actions">
-    <button class="btn-ghost" id="btnCancelarPago">Cancelar</button>
-    <button class="btn-primary" id="btnConfirmarPago">Confirmar pago</button>
+    <button class="btn-ghost" id="btnCancelarCobro">Cancelar</button>
+    <button class="btn-primary" id="btnConfirmarCobro">Registrar pago</button>
   </div>
 </div>
 

@@ -75,7 +75,9 @@ export const el = {
   inputGastoFecha: $('#inputGastoFecha'),
   sheetGastoTitulo: $('#sheetGastoTitulo'),
 
-  pagoResumen: $('#pagoResumen'),
+  cobroResumen: $('#cobroResumen'),
+  cobroDomicilios: $('#cobroDomicilios'),
+  cobroTotal: $('#cobroTotal'),
 
   calcTotal: $('#calcTotal'),
   calcGastos: $('#calcGastos'),

@@ -29,9 +29,7 @@ let tipoSeleccionado = 'normal';
 let pagadoSeleccionado = 'si';
 let medioPagoSeleccionado = 'efectivo';
 let categoriaGastoSeleccionada = 'gasolina';
-let entregaParaPago = null;
 let entregaParaDetalle = null;
-let medioPagoConfirmarSeleccionado = 'efectivo';
 
 /* ==================== SHEET: AGREGAR / EDITAR DOMICILIO =================== */
 
@@ -281,37 +279,7 @@ $('#btnGuardarGasto').addEventListener('click', () => conProteccionDoble($('#btn
   }
 }));
 
-/* ==================== SHEET: MARCAR DEUDA COMO PAGADA =================== */
-
-document.querySelectorAll('#segmentoMedioPagoConfirmar .segmented__opt').forEach(btn => {
-  btn.addEventListener('click', () => { medioPagoConfirmarSeleccionado = seleccionarSegmento('segmentoMedioPagoConfirmar', btn.dataset.valor); });
-});
-
-export function abrirSheetPago(entrega) {
-  entregaParaPago = entrega;
-  el.pagoResumen.textContent = `${entrega.nombre} · ${formatCOP(entrega.valor)} · realizado el ${formatFechaCorta(entrega.fecha)}`;
-  medioPagoConfirmarSeleccionado = seleccionarSegmento('segmentoMedioPagoConfirmar', 'efectivo');
-  mostrarSheet('sheetPago', 'sheetBackdropPago');
-}
-$('#btnCancelarPago').addEventListener('click', () => ocultarSheet('sheetPago', 'sheetBackdropPago'));
-$('#sheetBackdropPago').addEventListener('click', () => ocultarSheet('sheetPago', 'sheetBackdropPago'));
-
-$('#btnConfirmarPago').addEventListener('click', () => conProteccionDoble($('#btnConfirmarPago'), async () => {
-  if (!entregaParaPago) return;
-  try {
-    await actualizarDocumento('entregas', entregaParaPago.id, {
-      pagado: true,
-      medioPago: medioPagoConfirmarSeleccionado,
-      fechaPago: toDateKey(new Date())
-    });
-    ocultarSheet('sheetPago', 'sheetBackdropPago');
-    mostrarToast('¡Pago registrado! Ya cuenta como ingreso de hoy 🎉');
-    entregaParaPago = null;
-  } catch (err) {
-    console.error(err);
-    mostrarToast('No se pudo registrar el pago');
-  }
-}, 'Registrando…'));
+/* (El cobro de deudas ahora se hace agrupado por cliente en js/cobros.js.) */
 
 /* ==================== MODAL: DETALLE DE UN DOMICILIO =================== */
 

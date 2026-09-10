@@ -52,6 +52,7 @@ Modulos (`js/`):
 | `navigation.js` | Router de pantallas y barra inferior. |
 | `auth.js` | Login/registro y configuracion de cuenta. |
 | `clientes.js` | Clientes registrados (crear/editar/borrar en "Mas"). |
+| `cobros.js` | Pantalla "Cobros": agrupa deudas por cliente y registra pagos. |
 | `actualizacion.js` | Registro del service worker + aviso de version nueva. |
 | `pull-refresh.js` | Arrastrar hacia abajo desde el tope recarga la app. |
 

@@ -30,6 +30,7 @@ import { iniciarSuscripciones, detenerSuscripciones } from './js/data.js';
 import './js/render.js';       // registra renderTodo y ata los filtros de Registros/Gastos
 import './js/sheets.js';       // ata todos los botones de hojas y modales
 import './js/clientes.js';     // sección "Clientes" en la pestaña Más
+import './js/cobros.js';       // pantalla "Cobros" (agrupa deudas por cliente)
 import './js/actualizacion.js'; // registro del SW + aviso de nueva versión
 import './js/pull-refresh.js';  // arrastrar hacia abajo para recargar
 import { irAPestana } from './js/navigation.js';
