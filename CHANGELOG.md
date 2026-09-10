@@ -5,6 +5,18 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.9] — "Desliza para actualizar" como pestañita visible
+
+### Cambiado
+- El pull-to-refresh deja de ser un gesto libre sobre la lista (que se confundía
+  con el scroll). Ahora es una **pestañita** que baja de detrás de la barra
+  superior **solo cuando estás arriba de todo**. Se toca o se arrastra hacia
+  abajo para recargar. Como el gesto se hace sobre la pestañita y no sobre la
+  lista, es imposible dispararlo por accidente al scrollear.
+- Service worker: caché `v19`.
+
+---
+
 ## [1.9.8] — Pull to refresh que ya no choca con el scroll
 
 ### Corregido

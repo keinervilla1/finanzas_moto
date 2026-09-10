@@ -399,21 +399,25 @@ ul{ list-style:none; margin:0; padding:0; }
 }
 .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-/* ---------- Pull to refresh ---------- */
-.pull-refresh{
-  position:fixed; left:50%; top:0; transform:translateX(-50%) translateY(-44px);
-  width:36px; height:36px; border-radius:50%;
-  background:var(--card); box-shadow:var(--shadow-md);
-  display:flex; align-items:center; justify-content:center;
-  z-index:35; opacity:0; pointer-events:none;
+/* ---------- Pestañita "Desliza para actualizar" ---------- */
+.refresh-tab{
+  position:absolute; left:50%; z-index:15;
+  top:calc(env(safe-area-inset-top,0px) + 52px);
+  transform:translateX(-50%) translateY(-52px);
+  display:flex; align-items:center; gap:7px;
+  border:none; cursor:pointer;
+  background:var(--card); color:var(--verde-700);
+  box-shadow:var(--shadow-sm);
+  border-radius:0 0 16px 16px; padding:5px 16px 7px;
+  font-family:inherit; font-size:11px; font-weight:700; letter-spacing:.1px;
+  opacity:0; pointer-events:none;
+  transition:opacity .2s ease, transform .25s cubic-bezier(.32,.72,0,1), background .2s ease, color .2s ease;
 }
-.pull-refresh__spinner{
-  width:18px; height:18px; border-radius:50%;
-  border:2.5px solid var(--verde-100); border-top-color:var(--verde-600);
-  transition:transform .12s linear;
-}
-.pull-refresh.lista .pull-refresh__spinner{ transform:rotate(180deg); border-top-color:var(--verde-700); }
-.pull-refresh.spin .pull-refresh__spinner{ animation:girar .7s linear infinite; }
+.refresh-tab.visible{ opacity:1; pointer-events:auto; transform:translateX(-50%) translateY(0); }
+.refresh-tab.lista{ background:var(--verde-600); color:#fff; }
+.refresh-tab__icon{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+.refresh-tab.spin .refresh-tab__icon{ animation:girar .7s linear infinite; }
+.refresh-tab.spin .refresh-tab__text::after{ content:'…'; }
 
 /* ---------- Banner: nueva versión disponible ---------- */
 .update-banner{
