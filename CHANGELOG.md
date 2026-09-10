@@ -5,6 +5,24 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.9.2] — Aviso de nueva versión y botón "Recargar"
+
+Como la PWA instalada no tiene barra de navegador, no había forma de recargar
+la app desde dentro.
+
+### Agregado
+- **Banner "Hay una versión nueva de Domi · Actualizar"** que aparece solo
+  cuando el service worker detecta una versión desplegada más reciente (al
+  abrir la app o al volver a ella).
+- **Botón "🔄 Recargar la app"** en Más → Aplicación, siempre disponible.
+- `js/actualizacion.js` — registro del service worker + toda esta lógica
+  (antes el registro estaba suelto en `script.js`).
+
+### Cambiado
+- Service worker: caché `v12`.
+
+---
+
 ## [1.9.1] — Service worker: "red primero" para la app
 
 ### Corregido

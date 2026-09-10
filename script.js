@@ -30,6 +30,7 @@ import { iniciarSuscripciones, detenerSuscripciones } from './js/data.js';
 import './js/render.js';       // registra renderTodo y ata los filtros de Registros/Gastos
 import './js/sheets.js';       // ata todos los botones de hojas y modales
 import './js/clientes.js';     // sección "Clientes" en la pestaña Más
+import './js/actualizacion.js'; // registro del SW + aviso de nueva versión
 import { irAPestana } from './js/navigation.js';
 import { renderSaludo, resetAuthUI } from './js/auth.js';
 
@@ -74,11 +75,3 @@ setInterval(() => {
 // quitamos igual el loader para no dejar a la persona mirando una pantalla
 // congelada.
 setTimeout(ocultarLoaderInicial, 8000);
-
-/* ========================= PWA: service worker ======================== */
-
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(err => console.warn('No se pudo registrar el service worker:', err));
-  });
-}
