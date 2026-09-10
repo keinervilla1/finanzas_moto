@@ -5,6 +5,30 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.8.4] — Modularización (paso 5, final): render, hojas, navegación y auth
+
+Con este paso `script.js` deja de ser un archivo de 1400 líneas y pasa a ser un
+orquestador de ~85: carga los módulos, ata el arranque de sesión al estado y
+arranca los relojes y el service worker.
+
+### Agregado
+- `js/render.js` — todas las pantallas (inicio, semana, deben, frecuentes,
+  historial de semanas, registros y gastos con sus filtros).
+- `js/sheets.js` — todas las hojas inferiores y modales (domicilio, frecuente,
+  gasto, marcar pago, detalle, cálculo del día, meta y confirmación).
+- `js/navigation.js` — el router de pantallas (`irAPestana`) y la barra inferior.
+- `js/auth.js` — pantalla de login/registro y el modal de configuración de cuenta.
+
+### Cambiado
+- La app pasa de 1 archivo JS a 13 módulos con responsabilidades claras, como
+  pide `COPILOT_CONTEXT.md`. **Cero cambios de comportamiento**: es una
+  reubicación mecánica del mismo código (verificado: todas las funciones y los
+  43 listeners siguen presentes; prueba de humo CDP sin errores).
+- Se quitó un parámetro muerto de `seleccionarSegmento`.
+- Service worker: caché `v9`.
+
+---
+
 ## [1.8.3] — Modularización (paso 4: capa de datos y cálculos)
 
 ### Agregado
