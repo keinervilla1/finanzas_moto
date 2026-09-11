@@ -9,7 +9,7 @@
      caché primero, porque sus URLs llevan versión y no cambian.
    - Todo lo demás de otros orígenes (API de Firestore/Auth): no se toca. */
 
-const CACHE_NAME = 'domi-cache-v25';
+const CACHE_NAME = 'domi-cache-v26';
 
 const ARCHIVOS_CORE = [
   './',
@@ -34,7 +34,6 @@ const ARCHIVOS_CORE = [
   './js/pull-refresh.js',
   './firebase-config.js',
   './manifest.json',
-  './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png'

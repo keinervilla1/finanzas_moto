@@ -5,6 +5,29 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.10.3] — Ícono nuevo de la app
+
+### Cambiado
+- Se reemplazó el ícono de la PWA (moto + "DOMI") por el diseño definitivo que
+  compartió el usuario, generado a partir de `icons/logo-fuente.png`:
+  - `icon-192.png` / `icon-512.png`: el logo recortado, con las mismas
+    esquinas redondeadas del diseño (fondo transparente fuera de ellas).
+  - `icon-maskable-512.png`: el logo escalado a la zona segura sobre un fondo
+    a sangre con el degradé verde de la marca, para que Android/iOS no lo
+    recorten al aplicar su propia máscara (circular, squircle, etc.).
+- Se quitó `icon.svg`: era en realidad un PNG de 445 KB envuelto en SVG (sin
+  ninguna ventaja sobre el PNG de 52 KB); el favicon ahora usa los PNG
+  directamente.
+- `icons/logo-fuente.png` queda en el repo como el diseño original, sin usar
+  en tiempo de ejecución (no se precachea).
+- Service worker: caché `v26`.
+
+### Sin cambios
+- El emoji 🛵 dentro de la app (barra superior, pantalla de login) no es parte
+  del ícono de la PWA y no se tocó.
+
+---
+
 ## [1.10.0] — UX/UI: jerarquía visual (paso 1 de 3)
 
 Primera etapa de una revisión de UX/UI y organización (sin rediseño: se

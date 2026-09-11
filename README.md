@@ -32,7 +32,7 @@ Raiz:
 | `manifest.json` | Metadatos de la PWA. |
 | `firestore.rules` | Reglas de seguridad para publicar en Firebase. |
 | `firestore.indexes.json` | Indices compuestos que necesitan las consultas. |
-| `icons/` | Iconos de la app (192, 512, maskable, SVG). |
+| `icons/` | Iconos de la app (192, 512, maskable) + `logo-fuente.png` (el diseño original, sin usar en runtime). |
 | `CHANGELOG.md` | Historial de versiones. |
 
 Modulos (`js/`):
