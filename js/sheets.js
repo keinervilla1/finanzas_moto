@@ -250,11 +250,25 @@ export function abrirSheetGasto(gastoExistente) {
   el.inputGastoFecha.value = gastoExistente ? gastoExistente.fecha : toDateKey(new Date());
   categoriaGastoSeleccionada = gastoExistente ? gastoExistente.categoria : 'gasolina';
   document.querySelectorAll('#chipsCategoriaGasto .chip').forEach(c => c.classList.toggle('selected', c.dataset.valor === categoriaGastoSeleccionada));
+  el.btnEliminarGasto.style.display = gastoExistente ? 'block' : 'none';
   mostrarSheet('sheetGasto', 'sheetBackdropGasto');
 }
 $('#btnAgregarGasto').addEventListener('click', () => abrirSheetGasto(null));
 $('#btnCancelarGasto').addEventListener('click', () => ocultarSheet('sheetGasto', 'sheetBackdropGasto'));
 $('#sheetBackdropGasto').addEventListener('click', () => ocultarSheet('sheetGasto', 'sheetBackdropGasto'));
+
+$('#btnEliminarGasto').addEventListener('click', () => {
+  if (!editingGastoId) return;
+  const id = editingGastoId;
+  ocultarSheet('sheetGasto', 'sheetBackdropGasto');
+  pedirConfirmacion('¿Eliminar este gasto?', 'Esta acción no se puede deshacer.', async () => {
+    await eliminarDocumento('gastos', id);
+    state.gastos = state.gastos.filter(x => x.id !== id);
+    solicitarRenderTodo();
+    cargarGastosVista();
+    mostrarToast('Gasto eliminado');
+  }, '🗑️');
+});
 
 $('#btnGuardarGasto').addEventListener('click', () => conProteccionDoble($('#btnGuardarGasto'), async () => {
   const valor = Number(el.inputGastoValor.value);

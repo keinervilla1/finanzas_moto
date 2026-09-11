@@ -12,7 +12,7 @@ import { el, mostrarToast } from './dom.js';
 import { state, registros, gastosVista, historialSemanas, currentUid } from './state.js';
 import { entregasRealizadasEn, entregasPagadasEl, gastosDe, totalDe, totalesPorDia } from './calculos.js';
 import { coleccion, getDocs, query, where, orderBy, limit, startAfter } from './firebase.js';
-import { eliminarDocumento, avisarFaltaIndice, mapDoc, guardarPerfilEnNube } from './data.js';
+import { avisarFaltaIndice, mapDoc, guardarPerfilEnNube } from './data.js';
 import { solicitarRenderTodo, registrarRender } from './render-bus.js';
 import { pedirConfirmacion, abrirModalDetalle, abrirSheetFrecuente, abrirSheetGasto } from './sheets.js';
 
@@ -332,23 +332,8 @@ function renderGastos() {
         <p class="entrega-item__hora">${formatFechaCorta(g.fecha)}</p>
       </div>
       <div class="entrega-item__valor" style="color:var(--rojo)">-${formatCOP(g.valor)}</div>
-      <button class="entrega-item__del" title="Eliminar">✕</button>
     `;
-    li.addEventListener('click', (ev) => {
-      if (ev.target.closest('.entrega-item__del')) return;
-      abrirSheetGasto(g);
-    });
-    li.querySelector('.entrega-item__del').addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      pedirConfirmacion('¿Eliminar este gasto?', `${cat.label} · ${formatCOP(g.valor)}`, async () => {
-        await eliminarDocumento('gastos', g.id);
-        gastosVista.items = gastosVista.items.filter(x => x.id !== g.id);
-        state.gastos = state.gastos.filter(x => x.id !== g.id);
-        renderGastos();
-        solicitarRenderTodo();
-        mostrarToast('Gasto eliminado');
-      }, '🗑️');
-    });
+    li.addEventListener('click', () => abrirSheetGasto(g));
     el.listaGastos.appendChild(li);
   });
 }

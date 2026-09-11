@@ -274,12 +274,6 @@ ul{ list-style:none; margin:0; padding:0; }
 .entrega-item__nombre{ font-weight:700; font-size:14px; margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .entrega-item__hora{ margin:0; font-size:11.5px; color:var(--text-400); }
 .entrega-item__valor{ font-family:var(--font-display); font-weight:700; font-size:14.5px; color:var(--verde-900); white-space:nowrap; }
-.entrega-item__del{
-  border:none; background:var(--bg); color:var(--text-400);
-  width:28px; height:28px; border-radius:9px; font-size:13px; cursor:pointer; flex-shrink:0;
-  transition:background .15s ease, color .15s ease;
-}
-.entrega-item__del:active{ background:var(--rojo-bg); color:var(--rojo); }
 .empty-state{ display:none; text-align:center; color:var(--text-400); font-size:13.5px; padding:26px 10px; line-height:1.5; }
 .entregas-list:empty + .empty-state,
 .frecuentes-list:empty + .empty-state,

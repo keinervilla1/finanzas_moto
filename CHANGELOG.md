@@ -63,6 +63,25 @@ conserva el verde de Domi, la identidad y toda la lógica de negocio).
 
 ---
 
+## [1.10.2] — UX/UI: gastos consistentes + limpieza final (paso 3/3)
+
+### Cambiado
+- **Gastos** sigue ahora el mismo patrón que domicilios: se quitó el botón "✕"
+  de la lista; eliminar un gasto vive dentro de su hoja de edición, como texto
+  rojo discreto, con la misma confirmación de siempre.
+- Revisión completa de las 6 pantallas (Inicio, Semana, Registros, Cobros,
+  Gastos, Más) para verificar un mismo lenguaje visual: todas quedaron
+  consistentes sin necesitar más cambios.
+
+### Limpieza
+- CSS muerto eliminado: `.entrega-item__del` (ya no se usa en ninguna lista) y
+  el resto de `.account-card` (reemplazada en el paso anterior).
+
+### Sin cambios
+- Toda la lógica de gastos (crear, editar, filtros, totales) sigue igual.
+
+---
+
 ## [1.9.12] — Arrastrar para actualizar: filtro de velocidad
 
 ### Corregido

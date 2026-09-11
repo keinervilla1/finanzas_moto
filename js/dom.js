@@ -74,6 +74,7 @@ export const el = {
   inputGastoDescripcion: $('#inputGastoDescripcion'),
   inputGastoFecha: $('#inputGastoFecha'),
   sheetGastoTitulo: $('#sheetGastoTitulo'),
+  btnEliminarGasto: $('#btnEliminarGasto'),
 
   cobroResumen: $('#cobroResumen'),
   cobroDomicilios: $('#cobroDomicilios'),
