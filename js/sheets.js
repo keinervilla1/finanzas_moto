@@ -11,8 +11,8 @@ import {
 } from './dom.js';
 import { formatCOP, formatHora12, formatFechaCorta, toDateKey, escapeHTML, uid } from './utils.js';
 import { entregasRealizadasEn, entregasPagadasEl, gastosDe, totalDe } from './calculos.js';
-import { state } from './state.js';
-import { crearDocumento, actualizarDocumento, guardarPerfilEnNube } from './data.js';
+import { state, olvidarEntregaLocal } from './state.js';
+import { crearDocumento, actualizarDocumento, eliminarDocumento, guardarPerfilEnNube } from './data.js';
 import { solicitarRenderTodo } from './render-bus.js';
 import { cargarGastosVista } from './render.js';
 import { irAPestana } from './navigation.js';
@@ -305,6 +305,17 @@ $('#modalDetalleBackdrop').addEventListener('click', () => ocultarModal('modalDe
 $('#btnEditarDesdeDetalle').addEventListener('click', () => {
   ocultarModal('modalDetalle', 'modalDetalleBackdrop');
   if (entregaParaDetalle) abrirSheetEntrega(entregaParaDetalle);
+});
+$('#btnEliminarDesdeDetalle').addEventListener('click', () => {
+  if (!entregaParaDetalle) return;
+  const entrega = entregaParaDetalle;
+  ocultarModal('modalDetalle', 'modalDetalleBackdrop');
+  pedirConfirmacion('¿Eliminar este domicilio?', `${entrega.nombre} · ${formatCOP(entrega.valor)}`, async () => {
+    await eliminarDocumento('entregas', entrega.id);
+    olvidarEntregaLocal(entrega.id);
+    solicitarRenderTodo();
+    mostrarToast('Domicilio eliminado');
+  }, '🗑️');
 });
 
 /* ========================= MODAL: CÁLCULO DEL DÍA ===================== */

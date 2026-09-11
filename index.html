@@ -108,25 +108,26 @@
         </div>
       </div>
 
-      <!-- Resumen rápido -->
-      <div class="stats-row">
-        <div class="stat-chip">
-          <p class="stat-chip__value" id="gananciaSemanaMini">$0</p>
-          <p class="stat-chip__label">Esta semana</p>
+      <!-- Resumen rápido: una sola pieza visual con el hero de arriba -->
+      <div class="resumen-strip">
+        <div class="resumen-strip__item">
+          <p class="resumen-strip__value" id="gananciaSemanaMini">$0</p>
+          <p class="resumen-strip__label">Esta semana</p>
         </div>
-        <div class="stat-chip stat-chip--warn" id="chipDeben">
-          <p class="stat-chip__value" id="totalDebenMini">$0</p>
-          <p class="stat-chip__label">Por cobrar</p>
+        <div class="resumen-strip__item resumen-strip__item--warn" id="chipDeben">
+          <p class="resumen-strip__value" id="totalDebenMini">$0</p>
+          <p class="resumen-strip__label">Por cobrar</p>
         </div>
       </div>
 
-      <!-- Botón grande principal -->
+      <!-- Acción principal -->
       <button class="btn-primary btn-big" id="btnAgregarDomicilio">
         <span class="btn-big__icon">＋</span> Agregar domicilio
       </button>
 
-      <button class="btn-secondary" id="btnCalcularDia">
-        📊 Hacer cálculo del día
+      <!-- Acción secundaria: mismo lugar, mucho menos peso visual -->
+      <button class="btn-tertiary" id="btnCalcularDia">
+        Ver cálculo del día
       </button>
 
       <!-- Lista de domicilios de hoy -->
@@ -278,7 +279,7 @@
 
       <div class="section-head"><h2>Aplicación</h2></div>
       <button class="btn-secondary" id="btnEditarMetaDesdeMas">🎯 Meta semanal</button>
-      <p class="app-version">Domi v1.9.12</p>
+      <p class="app-version">Domi v1.10.0</p>
 
     </section>
 
@@ -485,8 +486,9 @@
 <!-- ============ MODAL: DETALLE DE UN DOMICILIO ============ -->
 <div class="modal-backdrop" id="modalDetalleBackdrop"></div>
 <div class="modal" id="modalDetalle">
-  <h3 class="modal__title">📦 Detalle del domicilio</h3>
+  <h3 class="modal__title">Detalle del domicilio</h3>
   <div class="calc-grid" id="detalleContenido"><!-- JS --></div>
+  <button class="link-btn link-btn--danger link-btn--block" id="btnEliminarDesdeDetalle">Eliminar domicilio</button>
   <div class="sheet__actions">
     <button class="btn-ghost" id="btnEditarDesdeDetalle">Editar</button>
     <button class="btn-primary" id="btnCerrarDetalle">Cerrar</button>
@@ -496,7 +498,7 @@
 <!-- ============ MODAL: CÁLCULO DEL DÍA ============ -->
 <div class="modal-backdrop" id="modalCalculoBackdrop"></div>
 <div class="modal" id="modalCalculo">
-  <h3 class="modal__title">📊 Cálculo del día</h3>
+  <h3 class="modal__title">Cálculo del día</h3>
   <div class="calc-grid">
     <div class="calc-item"><span>Ingresos reales</span><strong id="calcTotal">$0</strong></div>
     <div class="calc-item"><span>Gastos del día</span><strong id="calcGastos">$0</strong></div>
@@ -512,7 +514,7 @@
 <!-- ============ MODAL: EDITAR META ============ -->
 <div class="modal-backdrop" id="modalMetaBackdrop"></div>
 <div class="modal" id="modalMeta">
-  <h3 class="modal__title">🎯 Meta semanal</h3>
+  <h3 class="modal__title">Meta semanal</h3>
   <label class="field">
     <span>¿Cuánto quieres ganar esta semana?</span>
     <input type="number" id="inputMeta" placeholder="800000" inputmode="numeric">
@@ -526,7 +528,7 @@
 <!-- ============ MODAL: CONFIGURACIÓN DE CUENTA ============ -->
 <div class="modal-backdrop" id="modalCuentaBackdrop"></div>
 <div class="modal modal--cuenta" id="modalCuenta">
-  <h3 class="modal__title">⚙️ Configuración de cuenta</h3>
+  <h3 class="modal__title">Configuración de cuenta</h3>
 
   <span class="field__label">Nombre para mostrar</span>
   <div class="cuenta-row">

@@ -9,7 +9,7 @@ import {
   rangoSemanaTexto, toDateKey, getMonday, addDays, escapeHTML, tiempoCreacion
 } from './utils.js';
 import { el, mostrarToast } from './dom.js';
-import { state, registros, gastosVista, historialSemanas, currentUid, olvidarEntregaLocal } from './state.js';
+import { state, registros, gastosVista, historialSemanas, currentUid } from './state.js';
 import { entregasRealizadasEn, entregasPagadasEl, gastosDe, totalDe, totalesPorDia } from './calculos.js';
 import { coleccion, getDocs, query, where, orderBy, limit, startAfter } from './firebase.js';
 import { eliminarDocumento, avisarFaltaIndice, mapDoc, guardarPerfilEnNube } from './data.js';
@@ -70,7 +70,9 @@ function renderInicio(entregasHoy, netaHoy, gastosHoy, totalSemanaVal, totalDebe
   entregasHoy.forEach(entrega => el.listaHoy.appendChild(crearItemEntrega(entrega)));
 }
 
-/** Construye el <li> de un domicilio, reutilizado en Inicio, Deben y Registros. */
+/** Construye el <li> de un domicilio, reutilizado en Inicio y Registros. Toda
+ *  la fila abre el detalle; eliminar vive dentro de ese detalle (no aquí),
+ *  para que un toque de más en la lista nunca pueda borrar nada. */
 export function crearItemEntrega(entrega, opciones = {}) {
   const li = document.createElement('li');
   li.className = 'entrega-item';
@@ -88,25 +90,11 @@ export function crearItemEntrega(entrega, opciones = {}) {
       <div class="entrega-item__badges">${badges.join('')}</div>
     </div>
     <div class="entrega-item__valor">${formatCOP(entrega.valor)}</div>
-    ${opciones.sinBorrar ? '' : '<button class="entrega-item__del" title="Eliminar">✕</button>'}
   `;
-  li.addEventListener('click', (ev) => {
-    if (ev.target.closest('.entrega-item__del')) return;
+  li.addEventListener('click', () => {
     if (opciones.onClick) opciones.onClick(entrega);
     else abrirModalDetalle(entrega);
   });
-  const btnDel = li.querySelector('.entrega-item__del');
-  if (btnDel) {
-    btnDel.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      pedirConfirmacion('¿Eliminar este domicilio?', `${entrega.nombre} · ${formatCOP(entrega.valor)}`, async () => {
-        await eliminarDocumento('entregas', entrega.id);
-        olvidarEntregaLocal(entrega.id);
-        solicitarRenderTodo();
-        mostrarToast('Domicilio eliminado');
-      }, '🗑️');
-    });
-  }
   return li;
 }
 

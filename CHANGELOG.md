@@ -5,6 +5,44 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.10.0] — UX/UI: jerarquía visual (paso 1 de 3)
+
+Primera etapa de una revisión de UX/UI y organización (sin rediseño: se
+conserva el verde de Domi, la identidad y toda la lógica de negocio).
+
+### Cambiado — Inicio
+- **"Esta semana" y "Por cobrar"** dejan de ser dos tarjetas sueltas: ahora son
+  una sola franja pegada al hero, para que se lea como un único resumen
+  financiero en vez de "cajas" independientes.
+- **"Ver cálculo del día"** baja de `btn-secondary` (mismo peso que la acción
+  principal) a un texto discreto sin fondo: "Agregar domicilio" queda como la
+  única acción de nivel 1 en esa pantalla.
+- Lista "Domicilios de hoy" más compacta (menos padding, ícono más chico).
+
+### Cambiado — Seguridad al eliminar un domicilio
+- Se quitó el botón "✕" de la fila de cada domicilio (Inicio y Registros): un
+  toque de más ahí ya no puede iniciar un borrado. Eliminar ahora vive **dentro
+  del detalle** del domicilio, como un texto rojo discreto separado de
+  Editar/Cerrar, y sigue pidiendo confirmación antes de borrar.
+
+### Cambiado — Frecuentes y clientes
+- Filas más compactas; los íconos de editar/eliminar son ahora discretos (gris
+  neutro) y solo se acentúan al tocarlos, para no competir con el nombre.
+  Como ambas listas comparten el mismo componente, quedan consistentes entre sí
+  sin cambios adicionales.
+
+### Corregido
+- La fecha en la barra superior se veía "10 De Septiembre De 2026" (cada
+  palabra en mayúscula) por un `text-transform` que sobraba.
+- Se quitaron emojis decorativos de títulos de modales (Detalle, Cálculo del
+  día, Meta semanal, Configuración de cuenta); se conservan donde aportan
+  identidad o significado (marca, estados vacíos, categorías de gasto).
+
+### Sin cambios
+- Paleta verde, tipografías, lógica de negocio, datos, PWA, offline, navegación.
+
+---
+
 ## [1.9.12] — Arrastrar para actualizar: filtro de velocidad
 
 ### Corregido

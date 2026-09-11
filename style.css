@@ -87,7 +87,7 @@ ul{ list-style:none; margin:0; padding:0; }
   box-shadow:var(--shadow-sm);
 }
 .topbar__title{ margin:0; font-family:var(--font-display); font-weight:700; font-size:19px; }
-.topbar__date{ margin:0; font-size:12.5px; color:var(--text-400); text-transform:capitalize; }
+.topbar__date{ margin:0; font-size:12.5px; color:var(--text-400); }
 
 .topbar__goal{
   border:none; background:var(--card); border-radius:50%;
@@ -139,9 +139,9 @@ ul{ list-style:none; margin:0; padding:0; }
 .card{
   background:var(--card);
   border-radius:var(--radius-lg);
-  padding:20px;
+  padding:18px;
   box-shadow:var(--shadow-sm);
-  margin-bottom:16px;
+  margin-bottom:14px;
 }
 
 /* ---------- Hero (ganancia del día) ---------- */
@@ -176,7 +176,7 @@ ul{ list-style:none; margin:0; padding:0; }
   font-family:var(--font-display); font-weight:700; font-size:14px;
 }
 
-/* ---------- Fila de estadísticas chip ---------- */
+/* ---------- Fila de estadísticas chip (pantalla Semana) ---------- */
 .stats-row{ display:flex; gap:12px; margin-bottom:16px; }
 .stat-chip{
   flex:1; background:var(--card); border-radius:var(--radius-md);
@@ -184,6 +184,18 @@ ul{ list-style:none; margin:0; padding:0; }
 }
 .stat-chip__value{ margin:0; font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--verde-900); }
 .stat-chip__label{ margin:4px 0 0; font-size:11.5px; color:var(--text-400); }
+
+/* ---------- Resumen (Inicio): se lee como una sola pieza con el hero ---------- */
+.resumen-strip{
+  display:flex; background:var(--card); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm); margin:-8px 0 16px; overflow:hidden; position:relative; z-index:1;
+}
+.resumen-strip__item{ flex:1; padding:11px 12px; text-align:center; }
+.resumen-strip__item + .resumen-strip__item{ border-left:1px solid var(--border); }
+.resumen-strip__value{ margin:0; font-family:var(--font-display); font-weight:700; font-size:16.5px; color:var(--verde-900); }
+.resumen-strip__label{ margin:2px 0 0; font-size:11px; color:var(--text-400); }
+.resumen-strip__item--warn .resumen-strip__value{ color:#B45309; }
+#chipDeben.resumen-strip__item{ cursor:pointer; }
 
 /* ---------- Botones ---------- */
 .btn-primary{
@@ -203,10 +215,20 @@ ul{ list-style:none; margin:0; padding:0; }
   background:var(--verde-100); color:var(--verde-900);
   border-radius:var(--radius-md);
   padding:14px; font-weight:600; font-size:14.5px;
-  margin-bottom:22px;
+  margin-bottom:16px;
   transition:transform .15s ease;
 }
 .btn-secondary:active{ transform:scale(.97); }
+
+/* Acción de bajo protagonismo (nivel 3): sin fondo, más chica que primary/secondary. */
+.btn-tertiary{
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  width:100%; border:none; background:none; cursor:pointer;
+  color:var(--text-600); font-weight:600; font-size:13.5px;
+  padding:9px; margin:0 0 18px; border-radius:var(--radius-sm);
+  transition:background .15s ease;
+}
+.btn-tertiary:active{ background:var(--verde-50); }
 
 .btn-ghost{
   flex:1; border:none; cursor:pointer;
@@ -222,9 +244,11 @@ ul{ list-style:none; margin:0; padding:0; }
   border:none; background:none; color:var(--verde-700); font-weight:700;
   font-size:13.5px; cursor:pointer; padding:4px;
 }
+.link-btn--danger{ color:var(--rojo); }
+.link-btn--block{ display:block; width:100%; text-align:center; margin:2px 0 14px; }
 
 /* ---------- Encabezados de sección ---------- */
-.section-head{ display:flex; align-items:center; justify-content:space-between; margin:18px 0 10px; }
+.section-head{ display:flex; align-items:center; justify-content:space-between; margin:16px 0 10px; }
 .section-head h2{ margin:0; font-size:15.5px; font-family:var(--font-display); font-weight:700; }
 .pill{
   background:var(--verde-100); color:var(--verde-900);
@@ -233,27 +257,29 @@ ul{ list-style:none; margin:0; padding:0; }
 .hint{ margin:0 0 12px; font-size:12.5px; color:var(--text-400); }
 
 /* ---------- Lista de domicilios del día ---------- */
-.entregas-list{ display:flex; flex-direction:column; gap:10px; }
+.entregas-list{ display:flex; flex-direction:column; gap:8px; }
 .entrega-item{
   background:var(--card); border-radius:var(--radius-md);
-  padding:14px 14px; display:flex; align-items:center; gap:12px;
-  box-shadow:var(--shadow-sm);
+  padding:11px 12px; display:flex; align-items:center; gap:11px;
+  box-shadow:var(--shadow-sm); cursor:pointer;
   animation:slideIn .3s ease;
 }
 @keyframes slideIn{ from{opacity:0; transform:translateY(8px) scale(.98);} to{opacity:1; transform:translateY(0) scale(1);} }
 .entrega-item__icon{
-  width:40px; height:40px; border-radius:12px; flex-shrink:0;
+  width:34px; height:34px; border-radius:10px; flex-shrink:0;
   background:var(--verde-100); color:var(--verde-900);
-  display:flex; align-items:center; justify-content:center; font-size:17px;
+  display:flex; align-items:center; justify-content:center; font-size:15px;
 }
 .entrega-item__info{ flex:1; min-width:0; }
-.entrega-item__nombre{ font-weight:700; font-size:14.5px; margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.entrega-item__hora{ margin:0; font-size:12px; color:var(--text-400); }
-.entrega-item__valor{ font-family:var(--font-display); font-weight:700; font-size:15px; color:var(--verde-900); white-space:nowrap; }
+.entrega-item__nombre{ font-weight:700; font-size:14px; margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.entrega-item__hora{ margin:0; font-size:11.5px; color:var(--text-400); }
+.entrega-item__valor{ font-family:var(--font-display); font-weight:700; font-size:14.5px; color:var(--verde-900); white-space:nowrap; }
 .entrega-item__del{
-  border:none; background:var(--rojo-bg); color:var(--rojo);
-  width:30px; height:30px; border-radius:10px; font-size:14px; cursor:pointer; flex-shrink:0;
+  border:none; background:var(--bg); color:var(--text-400);
+  width:28px; height:28px; border-radius:9px; font-size:13px; cursor:pointer; flex-shrink:0;
+  transition:background .15s ease, color .15s ease;
 }
+.entrega-item__del:active{ background:var(--rojo-bg); color:var(--rojo); }
 .empty-state{ display:none; text-align:center; color:var(--text-400); font-size:13.5px; padding:26px 10px; line-height:1.5; }
 .entregas-list:empty + .empty-state,
 .frecuentes-list:empty + .empty-state,
@@ -294,23 +320,27 @@ ul{ list-style:none; margin:0; padding:0; }
 .chip.selected{ background:var(--verde-600); border-color:var(--verde-600); color:#fff; }
 .chip.chip--empty{ color:var(--text-400); background:transparent; border-style:dashed; }
 
-/* ---------- Lista de frecuentes ---------- */
-.frecuentes-list{ display:flex; flex-direction:column; gap:10px; }
+/* ---------- Lista de frecuentes / clientes (mismo lenguaje visual) ---------- */
+.frecuentes-list{ display:flex; flex-direction:column; gap:8px; }
 .frecuente-item{
   background:var(--card); border-radius:var(--radius-md);
-  padding:13px 14px; display:flex; align-items:center; gap:12px;
+  padding:10px 11px; display:flex; align-items:center; gap:10px;
   box-shadow:var(--shadow-sm);
 }
-.frecuente-item__info{ flex:1; }
-.frecuente-item__nombre{ font-weight:700; font-size:14.5px; margin:0 0 2px; }
-.frecuente-item__valor{ margin:0; font-size:13px; color:var(--verde-700); font-weight:600; }
-.frecuente-item__actions{ display:flex; gap:6px; }
+.frecuente-item__info{ flex:1; min-width:0; }
+.frecuente-item__nombre{ font-weight:700; font-size:14px; margin:0 0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.frecuente-item__valor{ margin:0; font-size:12.5px; color:var(--text-400); font-weight:600; }
+.frecuente-item__actions{ display:flex; gap:4px; flex-shrink:0; }
+
+/* Discretas a propósito: no deben competir con el nombre. Solo se acentúan al tocarlas. */
 .icon-btn{
-  border:none; width:32px; height:32px; border-radius:10px; cursor:pointer; font-size:14px;
+  border:none; width:26px; height:26px; border-radius:8px; cursor:pointer; font-size:12px;
   display:flex; align-items:center; justify-content:center;
+  background:var(--bg); color:var(--text-400);
+  transition:background .15s ease, color .15s ease;
 }
-.icon-btn--edit{ background:var(--verde-100); color:var(--verde-900); }
-.icon-btn--del{ background:var(--rojo-bg); color:var(--rojo); }
+.icon-btn--edit:active{ background:var(--verde-100); color:var(--verde-900); }
+.icon-btn--del:active{ background:var(--rojo-bg); color:var(--rojo); }
 
 /* ---------- Historial ---------- */
 .historial-list{ display:flex; flex-direction:column; gap:10px; }
@@ -595,6 +625,44 @@ ul{ list-style:none; margin:0; padding:0; }
 
 .subsection-title{ margin:0; font-size:13.5px; font-weight:700; color:var(--text-600); }
 .app-version{ text-align:center; font-size:11.5px; color:var(--text-400); margin:14px 0 4px; }
+
+/* =========================================================
+   GRUPOS DE CONFIGURACIÓN (pantalla Más)
+   Filas de navegación agrupadas en una tarjeta, como en los
+   ajustes de una app nativa: menos botones sueltos, más orden.
+   ========================================================= */
+.settings-group{ margin-bottom:20px; }
+.settings-group__label{
+  margin:0 0 8px 4px; font-size:11.5px; font-weight:700;
+  letter-spacing:.04em; text-transform:uppercase; color:var(--text-400);
+}
+.settings-card{
+  background:var(--card); border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm); overflow:hidden;
+}
+.settings-row{
+  width:100%; display:flex; align-items:center; gap:12px;
+  border:none; background:none; cursor:pointer; text-align:left;
+  padding:13px 14px; font-family:inherit; font-size:14px; font-weight:600; color:var(--text-900);
+}
+.settings-row + .settings-row{ border-top:1px solid var(--border); }
+.settings-row__icon{
+  width:30px; height:30px; border-radius:9px; flex-shrink:0;
+  background:var(--verde-100); color:var(--verde-700);
+  display:flex; align-items:center; justify-content:center; font-size:14px;
+}
+.settings-row__label{ flex:1; min-width:0; }
+.settings-row__chevron{ color:var(--text-400); flex-shrink:0; font-size:16px; }
+.settings-row--danger{ color:var(--rojo); }
+.settings-row--danger .settings-row__icon{ background:var(--rojo-bg); color:var(--rojo); }
+
+/* Fila de solo-lectura (la cuenta con la que iniciaste sesión). */
+.settings-info{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:13px 14px; gap:10px;
+}
+.settings-info__label{ margin:0 0 2px; font-size:11px; color:var(--text-400); }
+.settings-info__value{ margin:0; font-size:13.5px; font-weight:600; word-break:break-all; }
 
 /* ---------- Utilidades responsive ---------- */
 @media (min-width:461px){
