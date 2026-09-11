@@ -247,39 +247,64 @@
     <!-- ===================== PANTALLA: FRECUENTES / MÁS ===================== -->
     <section class="screen" id="screen-frecuentes">
 
-      <div class="section-head" style="margin-top:4px"><h2>Cuenta</h2></div>
-      <div class="card account-card">
-        <div>
-          <p class="account-card__label">Sesión iniciada como</p>
-          <p class="account-card__email" id="cuentaEmail">—</p>
+      <!-- ---------- Datos que administras ---------- -->
+      <div class="settings-group">
+        <p class="settings-group__label">Datos</p>
+
+        <div class="section-head" style="margin-top:0">
+          <h3 class="subsection-title">Domicilios frecuentes</h3>
+          <button class="link-btn" id="btnNuevoFrecuente">+ Nuevo</button>
+        </div>
+        <p class="hint">Créalos una vez y selecciónalos rápido al agregar un domicilio.</p>
+        <ul class="frecuentes-list" id="listaFrecuentes"><!-- JS --></ul>
+        <p class="empty-state" id="emptyFrecuentes">No tienes domicilios frecuentes todavía.</p>
+
+        <div class="section-head" style="margin-top:18px">
+          <h3 class="subsection-title">Clientes</h3>
+          <button class="link-btn" id="btnNuevoCliente">+ Nuevo</button>
+        </div>
+        <p class="hint">Personas o negocios que te acumulan pagos. Se agrupan en "Cobros".</p>
+        <ul class="frecuentes-list" id="listaClientes"><!-- JS --></ul>
+        <p class="empty-state" id="emptyClientes">No tienes clientes registrados todavía.</p>
+      </div>
+
+      <!-- ---------- Herramientas financieras ---------- -->
+      <div class="settings-group">
+        <p class="settings-group__label">Finanzas</p>
+        <div class="settings-card">
+          <button class="settings-row" id="btnIrAGastos">
+            <span class="settings-row__icon">💸</span>
+            <span class="settings-row__label">Gastos</span>
+            <span class="settings-row__chevron">›</span>
+          </button>
+          <button class="settings-row" id="btnEditarMetaDesdeMas">
+            <span class="settings-row__icon">🎯</span>
+            <span class="settings-row__label">Meta semanal</span>
+            <span class="settings-row__chevron">›</span>
+          </button>
         </div>
       </div>
-      <button class="btn-secondary" id="btnEditarCuenta">⚙️ Configuración de cuenta</button>
-      <button class="btn-secondary" id="btnCerrarSesion">Cerrar sesión</button>
 
-      <div class="section-head"><h2>Datos</h2></div>
-      <div class="section-head" style="margin-top:0">
-        <h3 class="subsection-title">Domicilios frecuentes</h3>
-        <button class="link-btn" id="btnNuevoFrecuente">+ Nuevo</button>
+      <!-- ---------- Cuenta ---------- -->
+      <div class="settings-group">
+        <p class="settings-group__label">Cuenta</p>
+        <div class="settings-card">
+          <div class="settings-info">
+            <div>
+              <p class="settings-info__label">Sesión iniciada como</p>
+              <p class="settings-info__value" id="cuentaEmail">—</p>
+            </div>
+          </div>
+          <button class="settings-row" id="btnEditarCuenta">
+            <span class="settings-row__icon">⚙️</span>
+            <span class="settings-row__label">Configuración de cuenta</span>
+            <span class="settings-row__chevron">›</span>
+          </button>
+        </div>
+        <button class="link-btn link-btn--danger link-btn--block" id="btnCerrarSesion" style="margin-top:14px">Cerrar sesión</button>
       </div>
-      <p class="hint">Créalos una vez y selecciónalos rápido al agregar un domicilio.</p>
-      <ul class="frecuentes-list" id="listaFrecuentes"><!-- JS --></ul>
-      <p class="empty-state" id="emptyFrecuentes">No tienes domicilios frecuentes todavía.</p>
 
-      <div class="section-head" style="margin-top:18px">
-        <h3 class="subsection-title">Clientes</h3>
-        <button class="link-btn" id="btnNuevoCliente">+ Nuevo</button>
-      </div>
-      <p class="hint">Personas o negocios que te acumulan pagos. Se agrupan en "Cobros".</p>
-      <ul class="frecuentes-list" id="listaClientes"><!-- JS --></ul>
-      <p class="empty-state" id="emptyClientes">No tienes clientes registrados todavía.</p>
-
-      <div class="section-head"><h2>Herramientas</h2></div>
-      <button class="btn-secondary" id="btnIrAGastos">💸 Gastos</button>
-
-      <div class="section-head"><h2>Aplicación</h2></div>
-      <button class="btn-secondary" id="btnEditarMetaDesdeMas">🎯 Meta semanal</button>
-      <p class="app-version">Domi v1.10.0</p>
+      <p class="app-version">Domi v1.10.1</p>
 
     </section>
 

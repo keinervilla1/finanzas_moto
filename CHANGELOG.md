@@ -43,6 +43,26 @@ conserva el verde de Domi, la identidad y toda la lógica de negocio).
 
 ---
 
+## [1.10.1] — UX/UI: "Más" como centro de configuración (paso 2/3)
+
+### Cambiado
+- La pestaña **Más** dejó de ser una lista larga de botones sueltos. Ahora son
+  3 grupos con etiqueta clara:
+  - **Datos** — Domicilios frecuentes y Clientes (igual que antes, mismas
+    listas y funciones).
+  - **Finanzas** — Gastos y Meta semanal, como filas de navegación agrupadas en
+    una sola tarjeta (con flecha, al estilo de los ajustes de una app nativa).
+  - **Cuenta** — correo de la sesión, Configuración de cuenta, y "Cerrar
+    sesión" separado abajo como texto discreto (es una acción poco frecuente,
+    no debe pesar igual que las demás).
+- Ningún `id` cambió: es solo reorganización visual, cero cambios de lógica.
+
+### Sin cambios
+- Todas las funciones de Frecuentes, Clientes, Gastos, Meta y Cuenta siguen
+  exactamente igual.
+
+---
+
 ## [1.9.12] — Arrastrar para actualizar: filtro de velocidad
 
 ### Corregido
