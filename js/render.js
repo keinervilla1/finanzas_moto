@@ -66,8 +66,11 @@ function renderInicio(entregasHoy, netaHoy, gastosHoy, totalSemanaVal, totalDebe
   el.ringHeroPct.textContent = pctTxt;
   el.metaMiniPct.textContent = pctTxt;
 
+  // Más reciente arriba (igual que Registros). Se invierte una copia solo para
+  // pintar: entregasRealizadasEn() se queda en orden cronológico porque el
+  // "Cálculo del día" toma de ahí el primer y el último domicilio.
   el.listaHoy.innerHTML = '';
-  entregasHoy.forEach(entrega => el.listaHoy.appendChild(crearItemEntrega(entrega)));
+  [...entregasHoy].reverse().forEach(entrega => el.listaHoy.appendChild(crearItemEntrega(entrega)));
 }
 
 /** Construye el <li> de un domicilio, reutilizado en Inicio y Registros. Toda
@@ -321,7 +324,13 @@ export async function cargarGastosVista() {
 function renderGastos() {
   el.totalGastosFiltro.textContent = formatCOP(totalDe(gastosVista.items));
   el.listaGastos.innerHTML = '';
-  gastosVista.items.forEach(g => {
+  // Más reciente arriba en todos los filtros. Antes "Hoy"/"Semana" salían del
+  // más viejo al más nuevo y "Mes"/"Todo" al revés. Se ordena una copia para
+  // no reordenar state.gastos (que "Semana" comparte por referencia).
+  [...gastosVista.items].sort((a, b) => {
+    if (a.fecha !== b.fecha) return a.fecha < b.fecha ? 1 : -1;
+    return tiempoCreacion(b) - tiempoCreacion(a);
+  }).forEach(g => {
     const cat = CATEGORIAS_GASTO[g.categoria] || CATEGORIAS_GASTO.otros;
     const li = document.createElement('li');
     li.className = 'entrega-item';

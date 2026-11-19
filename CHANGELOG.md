@@ -5,6 +5,40 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.11.0] — Navegación reordenada y lo más reciente arriba
+
+### Cambiado
+- **Barra inferior:** nuevo orden **Inicio · Cobros · Registros · Semana · Más**
+  (Cobros queda al lado de Inicio, a la mano del pulgar). Los nombres internos
+  de las pantallas no cambiaron, así que la app sigue abriendo en la última
+  pestaña que usaste.
+- **"Domicilios de hoy" (Inicio):** ahora el más reciente va arriba, igual que
+  en Registros. El "Cálculo del día" sigue mostrando bien el primer y el último
+  domicilio (se calcula aparte, en orden cronológico).
+- **Gastos:** el más reciente arriba en todos los filtros. Antes "Hoy" y
+  "Semana" salían del más viejo al más nuevo y "Mes" y "Todo" al revés.
+
+### Corregido
+- **Editar un domicilio y tocar Normal/Contrata ya no cambia "¿pagó ya?".**
+  Antes, en un domicilio ya pagado, tocar "Contrata" lo pasaba a "no pagado";
+  si se guardaba así, se borraban su fecha y medio de pago y el ingreso salía de
+  la semana (aparecía en Cobros). Ahora ese valor por defecto (Contrata → no
+  pagado) solo se aplica al **crear** un domicilio nuevo.
+
+### Documentación
+- `DOMI-CONTEXTO.md` al día: versión, archivos y funciones reales; estructura
+  exacta de Firestore (colecciones y campos); hoja de ruta sin lo ya hecho;
+  glosario corregido (el abono es del cliente; Contrata solo cambia el valor
+  por defecto de "pagado").
+- `CLAUDE.md` nuevo: apunta a `DOMI-CONTEXTO.md` y resume las reglas de datos.
+
+### Sin cambios
+- Datos en Firestore: ningún campo nuevo, borrado ni renombrado; no hay
+  migraciones. Menú "Más", Cobros, cálculos y diseño siguen igual.
+- Service worker: caché `v27`.
+
+---
+
 ## [1.10.3] — Ícono nuevo de la app
 
 ### Cambiado

@@ -43,9 +43,14 @@ function seleccionarSegmento(contenedorId, valor) {
 document.querySelectorAll('#segmentoTipo .segmented__opt').forEach(btn => {
   btn.addEventListener('click', () => {
     tipoSeleccionado = seleccionarSegmento('segmentoTipo', btn.dataset.valor);
-    // Contrata → por defecto no se paga de inmediato (se puede cambiar a mano)
-    pagadoSeleccionado = seleccionarSegmento('segmentoPagado', tipoSeleccionado === 'contrata' ? 'no' : 'si');
-    actualizarVisibilidadCamposPago();
+    // Solo al CREAR: Contrata → por defecto no se paga de inmediato (se puede
+    // cambiar a mano). Al EDITAR no se toca "pagado": antes, tocar el tipo en un
+    // domicilio ya pagado lo pasaba a "no pagado" y, al guardar, se perdía su
+    // fecha de pago y el ingreso salía de la semana.
+    if (!editingEntregaId) {
+      pagadoSeleccionado = seleccionarSegmento('segmentoPagado', tipoSeleccionado === 'contrata' ? 'no' : 'si');
+      actualizarVisibilidadCamposPago();
+    }
   });
 });
 document.querySelectorAll('#segmentoPagado .segmented__opt').forEach(btn => {

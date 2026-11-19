@@ -63,40 +63,68 @@ No solamente registrar información: **debe ayudar al usuario a tomar mejores de
 
 ## 4. Estado actual del proyecto
 
-- **Versión actual:** v1.5 (ver `CHANGELOG.md`, que documenta de la 1.0 a la 1.5).
+- **Versión actual:** v1.11.0 (el historial completo está en `CHANGELOG.md`).
 - **Diseño:** verde y blanco, inspirado en iPhone.
 
 ### Archivos actuales
 ```
-index.html
+index.html            → todas las pantallas, hojas y modales
 style.css
-script.js
-manifest.json
-service-worker.js   (o sw.js)
-CHANGELOG.md
+script.js             → punto de entrada: carga los módulos y arranca la sesión
+sw.js                 → service worker (caché offline, "red primero" para la app)
+manifest.json         → PWA instalable
+firebase-config.js    → claves públicas de Firebase
+firestore.rules       → reglas de seguridad (copiar a la consola de Firebase)
+firestore.indexes.json→ índices compuestos que necesita la app
+icons/                → íconos de la PWA (logo-fuente.png es el diseño original, no se usa en la app)
+js/
+  config.js           → constantes (meta por defecto, categorías de gasto, navegación)
+  utils.js            → fechas, formato de dinero, funciones puras
+  firebase.js         → inicialización del SDK y referencias a Firestore
+  dom.js              → referencias a elementos, hojas, modales, toast
+  state.js            → estado en memoria compartido
+  calculos.js         → totales y datos derivados
+  data.js             → lecturas/escrituras a Firestore, tiempo real, migración
+  render-bus.js       → puente para pedir un repintado
+  render.js           → Inicio, Semana, Registros, Gastos, Frecuentes, historial
+  sheets.js           → hojas de domicilio, frecuente, gasto; modales detalle, cálculo, meta
+  cobros.js           → pantalla Cobros (agrupada por cliente) y registro de pagos
+  clientes.js         → lista y edición de clientes (en "Más")
+  navigation.js       → cambio de pantallas y barra inferior
+  auth.js             → login, registro y configuración de cuenta
+  actualizacion.js    → registro del service worker y aviso de versión nueva
+  pull-refresh.js     → arrastrar hacia abajo para recargar
+CHANGELOG.md, README.md, DOMI-CONTEXTO.md, CLAUDE.md
 ```
 
+### Navegación (barra inferior)
+**Inicio · Cobros · Registros · Semana · Más.** "Gastos" es una subpantalla que
+se abre desde "Más". Los nombres internos de pantalla son `inicio`, `deben`
+(Cobros), `registros`, `semana`, `frecuentes` (Más) y `gastos`; no cambiarlos sin
+motivo (la última pestaña abierta se guarda en el teléfono con ese nombre).
+
 ### Funciones que ya existen (NO romper)
-- Inicio de sesión con Firebase y sincronización en la nube.
-- Anillo de progreso de la meta semanal.
-- Modal de cálculo diario.
-- Destinos predefinidos con autocompletado.
-- Tipo de domicilio: **Normal** o **Contrata**.
-- Pago inmediato (sí/no) y selección de método de pago.
-- Pagos parciales.
-- Barra indicadora de sincronización y spinner global de carga.
-- Migración automática de datos antiguos (legacy).
-- Modal de detalle de domicilio.
-- Pestaña **Deben** (cuentas por cobrar).
-- Módulo **Gastos**.
-- Pestaña **Registros** con filtros y paginación.
-- Menú **Más**.
+- Inicio de sesión con Firebase (sesión persistente) y sincronización en tiempo real.
+- Funciona sin conexión (caché de Firestore + service worker) y avisa cuando hay versión nueva.
+- **Inicio:** ganancia neta de hoy, anillo de meta semanal, "Esta semana" y "Por cobrar",
+  botón "Agregar domicilio", "Ver cálculo del día" y lista de domicilios de hoy (más reciente arriba).
+- **Agregar / editar domicilio:** frecuentes como chips, cliente opcional, tipo
+  **Normal / Contrata**, ¿pagó ya? (sí/no), medio de pago (efectivo/transferencia), observación.
+- **Detalle del domicilio:** ver, editar y eliminar (con confirmación).
+- **Cobros:** domicilios sin pagar agrupados por cliente; pagar marcando domicilios o
+  escribiendo un monto (paga del más antiguo al más nuevo); el sobrante queda como
+  **abono del cliente** (solo clientes registrados).
+- **Registros:** historial con filtros (semana, mes, 3 meses, todo) y "Cargar más".
+- **Semana:** meta, mejor día, promedio diario, días de la semana y semanas anteriores.
+- **Gastos:** por categoría, con filtros (hoy, semana, mes, todo); editar y eliminar.
+- **Más:** Datos (frecuentes y clientes), Finanzas (gastos y meta semanal), Cuenta
+  (configuración y cerrar sesión).
+- Barra "Sincronizando…", pantalla de carga, protección contra doble toque,
+  recordar la última pestaña, arrastrar para actualizar.
+- Migración automática de datos antiguos (arreglo `entregas` del perfil → subcolección).
 
 ### Trabajo pendiente conocido
-- Reordenar la navegación.
-- Convertir **Deben** en un módulo de cobros agrupado por cliente, con abonos parciales.
-- Corregir el orden de los domicilios (más recientes primero).
-- Reorganizar el menú **Más**.
+- Ver la hoja de ruta (sección 14).
 
 ---
 
@@ -105,13 +133,34 @@ CHANGELOG.md
 El usuario ya tiene **información real e importante guardada**. Perder datos es el peor error posible.
 
 ### Estructura actual en Firestore
-- Cada usuario tiene su propio espacio de datos.
-- **Un documento por domicilio** (subcolección).
-- **Un documento por gasto** (subcolección).
-- Existe una migración que pasa los datos antiguos al formato de subcolecciones.
 
-> [Completar con los nombres exactos de las colecciones y los campos, por ejemplo:
-> `usuarios/{uid}/domicilios/{id}` → `fecha`, `valor`, `destino`, `tipo`, `pagado`, `metodoPago`, `abonos`…]
+**Ruta base:** `usuarios/{uid}`. Cada usuario solo ve lo suyo (`firestore.rules`).
+
+**`usuarios/{uid}`** (perfil, un solo documento)
+- `frecuentes`: lista de `{ id, nombre, valor }`
+- `meta`: número (por defecto 800000)
+- `entregas`: lista antigua (versión vieja). La migración la pasa a la subcolección y luego **la borra**. Ya no debería existir.
+
+**`usuarios/{uid}/entregas/{id}`** (un documento por domicilio; en Firestore se llama "entregas", no "domicilios")
+- `nombre` (texto), `valor` (número), `hora` ("HH:MM"), `fecha` ("AAAA-MM-DD", el día en que se hizo)
+- `descripcion` (texto, puede estar vacío)
+- `tipo`: `"normal"` o `"contrata"`. Si no existe, se toma como normal.
+- `clienteId`: id de un cliente o `null`. **Los domicilios viejos no lo tienen.**
+- `pagado` (sí/no), `medioPago` (`"efectivo"`, `"transferencia"` o `null`), `fechaPago` ("AAAA-MM-DD" o `null`)
+- `creadoEn`: fecha y hora del servidor (sirve para desempatar el orden). Puede faltar en registros muy viejos.
+
+**`usuarios/{uid}/gastos/{id}`**
+- `valor`, `categoria` (`gasolina`, `comida`, `mantenimiento`, `peajes` u `otros`), `descripcion`, `fecha`, `creadoEn`
+
+**`usuarios/{uid}/clientes/{id}`**
+- `nombre`, `telefono` (puede estar vacío), `creadoEn`
+- `abono`: número. Solo existe si alguna vez sobró dinero en un cobro.
+
+**Índices:** `entregas` por `pagado` + `fechaPago`, uno ascendente y otro descendente (`firestore.indexes.json`).
+
+**En el teléfono (no en Firestore):** `localStorage.domi_ultima_pestana`.
+
+> No hay "abonos" por domicilio: cada domicilio está pagado o no. El abono se guarda en el **cliente**.
 
 ### Reglas de datos
 1. **Nunca borrar, renombrar ni cambiar el tipo de un campo existente.**
@@ -266,13 +315,15 @@ Preparar la aplicación para **miles de registros**.
 
 Orden sugerido, una versión pequeña a la vez:
 
-1. **v1.6:** terminar los pendientes (navegación, orden de domicilios, menú Más).
-2. **v1.7:** Cobros: Deben agrupado por cliente, con abonos parciales.
-3. **v1.8:** Clientes: lista de clientes frecuentes vinculada a domicilios y cobros.
-4. **v1.9:** Estadísticas: ganancia neta (ingresos − gastos) por día, semana y mes.
-5. **v1.10:** Productividad: domicilios por hora, mejores días y horarios.
-6. **v1.11:** Respaldo: exportar los datos (CSV/JSON).
-7. **v2.0:** arquitectura modular completa.
+1. **v1.12:** Estadísticas: ganancia neta (ingresos − gastos) por día, semana y mes.
+2. **v1.13:** Productividad: domicilios por hora, mejores días y horarios.
+3. **v1.14:** Respaldo: exportar los datos (CSV/JSON).
+4. **v2.0:** terminar la arquitectura modular (la división en módulos de `js/` ya
+   está hecha; falta separar domicilios, gastos y estadísticas de `render.js` y `sheets.js`).
+
+Ya hechos (ver `CHANGELOG.md`): Cobros agrupado por cliente con abono (v1.9.5–1.9.7),
+Clientes vinculados a domicilios y cobros (v1.9.0–1.9.4), menú Más reorganizado
+(v1.10.1), navegación y orden de domicilios (v1.11.0).
 
 > Esta lista se puede cambiar. Lo importante es avanzar en pasos pequeños y sin perder datos.
 
@@ -281,8 +332,15 @@ Orden sugerido, una versión pequeña a la vez:
 ## 15. Glosario
 
 - **Domicilio:** un servicio de entrega realizado.
-- **Normal / Contrata:** tipos de domicilio. [Completar con la diferencia exacta, por ejemplo cómo se cobra cada uno.]
-- **Deben:** domicilios o valores que todavía no te han pagado (cuentas por cobrar).
-- **Abono / pago parcial:** parte de un valor pendiente que ya se cobró.
+- **Normal / Contrata:** tipos de domicilio. En el dinero no hay ninguna diferencia
+  (los dos suman igual en ganancias, meta y cobros). La única diferencia de
+  comportamiento: al **crear** un domicilio, elegir "Contrata" marca por defecto
+  "no pagado" (se puede cambiar). Al **editar**, cambiar el tipo no toca el pago.
+  Se distinguen visualmente con 📋 y una etiqueta azul "Contrata".
+- **Cobros** (antes "Deben"): domicilios que todavía no te han pagado (cuentas por
+  cobrar), agrupados por cliente. Internamente la pantalla se sigue llamando `deben`.
+- **Abono:** dinero que un **cliente registrado** te dio de más y que no alcanzó para
+  pagar otro domicilio completo. Se guarda en el cliente (`clientes/{id}.abono`), no
+  en el domicilio, y se usa en el siguiente cobro. Cada domicilio está pagado o no.
 - **Gasto:** dinero que sale (gasolina, mantenimiento, comida, etc.).
 - **Meta semanal:** valor que el repartidor quiere ganar en la semana.
