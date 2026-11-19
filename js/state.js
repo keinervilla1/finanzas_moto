@@ -14,7 +14,8 @@ export const state = {
   frecuentes: [],
   clientes: [],   // personas/negocios registrados para agrupar cobros
   meta: META_SEMANAL_DEFAULT,
-  datosPago: ''   // texto libre (ej. "Nequi 300…") para el mensaje de cobro; '' si no existe
+  datosPago: '',  // texto libre (ej. "Nequi 300…") para el mensaje de cobro; '' si no existe
+  basesEfectivo: {} // { "AAAA-MM-DD": número } con cuánto efectivo salió cada día (v1.14)
 };
 
 /** Datos "bajo demanda" para las pantallas Registros, Gastos e Historial. */

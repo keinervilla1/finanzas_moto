@@ -13,12 +13,16 @@ import { toDateKey, addDays, tiempoCreacion } from './utils.js';
  *  desempata por el instante real de guardado — así el orden refleja el
  *  recorrido del día tal como ocurrió. */
 export function entregasRealizadasEn(fechaKey) {
-  return state.entregas
-    .filter(e => e.fecha === fechaKey)
-    .sort((a, b) => {
-      const porHora = (a.hora || '').localeCompare(b.hora || '');
-      return porHora !== 0 ? porHora : tiempoCreacion(a) - tiempoCreacion(b);
-    });
+  return ordenCronologico(state.entregas.filter(e => e.fecha === fechaKey));
+}
+
+/** Copia ordenada por hora (y, a igual hora, por el instante de guardado).
+ *  La usan Inicio y el Cierre del día (primer / último domicilio). */
+export function ordenCronologico(lista) {
+  return [...lista].sort((a, b) => {
+    const porHora = (a.hora || '').localeCompare(b.hora || '');
+    return porHora !== 0 ? porHora : tiempoCreacion(a) - tiempoCreacion(b);
+  });
 }
 
 export function entregasPagadasEl(fechaKey) {

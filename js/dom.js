@@ -98,13 +98,10 @@ export const el = {
   inputCobroMonto: $('#inputCobroMonto'),
   cobroNota: $('#cobroNota'),
 
-  calcTotal: $('#calcTotal'),
-  calcGastos: $('#calcGastos'),
-  calcNeta: $('#calcNeta'),
-  calcCantidad: $('#calcCantidad'),
-  calcPromedio: $('#calcPromedio'),
-  calcPrimero: $('#calcPrimero'),
-  calcUltimo: $('#calcUltimo'),
+  cierreFecha: $('#cierreFecha'),
+  cierreContenido: $('#cierreContenido'),
+  btnCierreAnterior: $('#btnCierreAnterior'),
+  btnCierreSiguiente: $('#btnCierreSiguiente'),
 
   inputMeta: $('#inputMeta'),
 

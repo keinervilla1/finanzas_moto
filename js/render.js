@@ -68,7 +68,7 @@ function renderInicio(entregasHoy, netaHoy, gastosHoy, totalSemanaVal, totalDebe
 
   // Más reciente arriba (igual que Registros). Se invierte una copia solo para
   // pintar: entregasRealizadasEn() se queda en orden cronológico porque el
-  // "Cálculo del día" toma de ahí el primer y el último domicilio.
+  // "Cierre del día" usa el mismo orden para el primer y el último domicilio.
   el.listaHoy.innerHTML = '';
   [...entregasHoy].reverse().forEach(entrega => el.listaHoy.appendChild(crearItemEntrega(entrega)));
 }
@@ -338,7 +338,7 @@ function renderGastos() {
       <div class="entrega-item__icon">${cat.emoji}</div>
       <div class="entrega-item__info">
         <p class="entrega-item__nombre">${cat.label}${g.descripcion ? ' · ' + escapeHTML(g.descripcion) : ''}</p>
-        <p class="entrega-item__hora">${formatFechaCorta(g.fecha)}</p>
+        <p class="entrega-item__hora">${formatFechaCorta(g.fecha)}${g.medioPago === 'transferencia' ? ' · 💳 Transferencia' : ''}</p>
       </div>
       <div class="entrega-item__valor" style="color:var(--rojo)">-${formatCOP(g.valor)}</div>
     `;

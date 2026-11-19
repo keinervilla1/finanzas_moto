@@ -122,7 +122,7 @@
 
       <!-- Acción secundaria: mismo lugar, mucho menos peso visual -->
       <button class="btn-tertiary" id="btnCalcularDia">
-        Ver cálculo del día
+        Ver cierre del día
       </button>
 
       <!-- Lista de domicilios de hoy -->
@@ -525,6 +525,12 @@
     <input type="number" id="inputGastoValor" placeholder="0" inputmode="numeric">
   </label>
 
+  <span class="field__label">¿Con qué lo pagaste?</span>
+  <div class="segmented" id="segmentoMedioPagoGasto">
+    <button type="button" class="segmented__opt selected" data-valor="efectivo">Efectivo</button>
+    <button type="button" class="segmented__opt" data-valor="transferencia">Transferencia</button>
+  </div>
+
   <label class="field">
     <span>Descripción (opcional)</span>
     <input type="text" id="inputGastoDescripcion" placeholder="Ej: tanqueada en Terpel">
@@ -589,20 +595,20 @@
   </div>
 </div>
 
-<!-- ============ MODAL: CÁLCULO DEL DÍA ============ -->
-<div class="modal-backdrop" id="modalCalculoBackdrop"></div>
-<div class="modal" id="modalCalculo">
-  <h3 class="modal__title">Cálculo del día</h3>
-  <div class="calc-grid">
-    <div class="calc-item"><span>Ingresos reales</span><strong id="calcTotal">$0</strong></div>
-    <div class="calc-item"><span>Gastos del día</span><strong id="calcGastos">$0</strong></div>
-    <div class="calc-item"><span>Ganancia neta</span><strong id="calcNeta">$0</strong></div>
-    <div class="calc-item"><span>Domicilios</span><strong id="calcCantidad">0</strong></div>
-    <div class="calc-item"><span>Promedio</span><strong id="calcPromedio">$0</strong></div>
-    <div class="calc-item"><span>Primer domicilio</span><strong id="calcPrimero">—</strong></div>
-    <div class="calc-item"><span>Último domicilio</span><strong id="calcUltimo">—</strong></div>
+<!-- ============ SHEET: CIERRE DEL DÍA (antes "Cálculo del día") ============ -->
+<div class="sheet-backdrop" id="sheetBackdropCierre"></div>
+<div class="sheet" id="sheetCierre">
+  <div class="sheet__handle"></div>
+  <div class="cierre-nav">
+    <button type="button" class="cierre-nav__btn" id="btnCierreAnterior" aria-label="Día anterior">‹</button>
+    <div class="cierre-nav__titulo">
+      <h3 class="sheet__title">Cierre del día</h3>
+      <p class="cierre-nav__fecha" id="cierreFecha"></p>
+    </div>
+    <button type="button" class="cierre-nav__btn" id="btnCierreSiguiente" aria-label="Día siguiente">›</button>
   </div>
-  <button class="btn-primary" id="btnCerrarCalculo">Entendido</button>
+  <div id="cierreContenido"><!-- JS --></div>
+  <button class="btn-primary" id="btnCerrarCierre" style="margin-top:16px">Listo</button>
 </div>
 
 <!-- ============ MODAL: EDITAR META ============ -->

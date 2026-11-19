@@ -1,8 +1,8 @@
 /* =========================================================================
    DOMI — Hojas inferiores y modales
    Abrir/cerrar y guardar: domicilio, frecuente, gasto, marcar pago, detalle,
-   cálculo del día, meta y confirmación genérica. Toda la interacción de
-   formularios emergentes vive aquí.
+   meta y confirmación genérica. Toda la interacción de
+   formularios emergentes vive aquí (el cierre del día está en js/cierre.js).
    ========================================================================= */
 
 import {
@@ -10,7 +10,6 @@ import {
   mostrarSheet, ocultarSheet, mostrarModal, ocultarModal, mostrarToast
 } from './dom.js';
 import { formatCOP, formatHora12, formatFechaCorta, toDateKey, escapeHTML, uid } from './utils.js';
-import { entregasRealizadasEn, entregasPagadasEl, gastosDe, totalDe } from './calculos.js';
 import { state, olvidarEntregaLocal } from './state.js';
 import { crearDocumento, actualizarDocumento, eliminarDocumento, guardarPerfilEnNube } from './data.js';
 import { solicitarRenderTodo } from './render-bus.js';
@@ -29,6 +28,7 @@ let tipoSeleccionado = 'normal';
 let pagadoSeleccionado = 'si';
 let medioPagoSeleccionado = 'efectivo';
 let categoriaGastoSeleccionada = 'gasolina';
+let medioPagoGastoSeleccionado = 'efectivo';
 let entregaParaDetalle = null;
 
 /* ==================== SHEET: AGREGAR / EDITAR DOMICILIO =================== */
@@ -246,6 +246,11 @@ document.querySelectorAll('#chipsCategoriaGasto .chip').forEach(chip => {
     categoriaGastoSeleccionada = chip.dataset.valor;
   });
 });
+document.querySelectorAll('#segmentoMedioPagoGasto .segmented__opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    medioPagoGastoSeleccionado = seleccionarSegmento('segmentoMedioPagoGasto', btn.dataset.valor);
+  });
+});
 
 export function abrirSheetGasto(gastoExistente) {
   editingGastoId = gastoExistente ? gastoExistente.id : null;
@@ -255,6 +260,9 @@ export function abrirSheetGasto(gastoExistente) {
   el.inputGastoFecha.value = gastoExistente ? gastoExistente.fecha : toDateKey(new Date());
   categoriaGastoSeleccionada = gastoExistente ? gastoExistente.categoria : 'gasolina';
   document.querySelectorAll('#chipsCategoriaGasto .chip').forEach(c => c.classList.toggle('selected', c.dataset.valor === categoriaGastoSeleccionada));
+  // Gastos anteriores a v1.14 no tienen medioPago: se toman como efectivo.
+  medioPagoGastoSeleccionado = seleccionarSegmento('segmentoMedioPagoGasto',
+    gastoExistente && gastoExistente.medioPago === 'transferencia' ? 'transferencia' : 'efectivo');
   el.btnEliminarGasto.style.display = gastoExistente ? 'block' : 'none';
   mostrarSheet('sheetGasto', 'sheetBackdropGasto');
 }
@@ -281,7 +289,7 @@ $('#btnGuardarGasto').addEventListener('click', () => conProteccionDoble($('#btn
   const fecha = el.inputGastoFecha.value || toDateKey(new Date());
   if (!valor || valor <= 0) { mostrarToast('Ingresa un valor válido'); return; }
 
-  const datos = { valor, categoria: categoriaGastoSeleccionada, descripcion, fecha };
+  const datos = { valor, categoria: categoriaGastoSeleccionada, descripcion, fecha, medioPago: medioPagoGastoSeleccionado };
   try {
     if (editingGastoId) {
       await actualizarDocumento('gastos', editingGastoId, datos);
@@ -337,27 +345,7 @@ $('#btnEliminarDesdeDetalle').addEventListener('click', () => {
   }, '🗑️');
 });
 
-/* ========================= MODAL: CÁLCULO DEL DÍA ===================== */
-
-$('#btnCalcularDia').addEventListener('click', () => {
-  const hoyKey = toDateKey(new Date());
-  const realizados = entregasRealizadasEn(hoyKey);
-  const pagados = entregasPagadasEl(hoyKey);
-  const ingresos = totalDe(pagados);
-  const gastosHoy = totalDe(gastosDe(hoyKey));
-
-  el.calcTotal.textContent = formatCOP(ingresos);
-  el.calcGastos.textContent = formatCOP(gastosHoy);
-  el.calcNeta.textContent = formatCOP(ingresos - gastosHoy);
-  el.calcCantidad.textContent = realizados.length;
-  el.calcPromedio.textContent = formatCOP(realizados.length ? totalDe(realizados) / realizados.length : 0);
-  el.calcPrimero.textContent = realizados.length ? formatHora12(realizados[0].hora) : '—';
-  el.calcUltimo.textContent = realizados.length ? formatHora12(realizados[realizados.length - 1].hora) : '—';
-
-  mostrarModal('modalCalculo', 'modalCalculoBackdrop');
-});
-$('#btnCerrarCalculo').addEventListener('click', () => ocultarModal('modalCalculo', 'modalCalculoBackdrop'));
-$('#modalCalculoBackdrop').addEventListener('click', () => ocultarModal('modalCalculo', 'modalCalculoBackdrop'));
+/* (El "Cálculo del día" ahora es el "Cierre del día": js/cierre.js.) */
 
 /* ============================ MODAL: META ============================= */
 

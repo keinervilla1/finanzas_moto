@@ -6,7 +6,7 @@
 
 import {
   refPerfil, coleccion, refDocumento,
-  setDoc, updateDoc, deleteDoc, deleteField, addDoc,
+  setDoc, updateDoc, deleteDoc, deleteField, addDoc, FieldPath,
   onSnapshot, query, where, orderBy, serverTimestamp
 } from './firebase.js';
 import { el, mostrarToast, ocultarLoaderInicial } from './dom.js';
@@ -73,6 +73,7 @@ function suscribirsePerfil(uid) {
     state.frecuentes = data.frecuentes || [];
     state.meta = data.meta || META_SEMANAL_DEFAULT;
     state.datosPago = typeof data.datosPago === 'string' ? data.datosPago : ''; // campo opcional (v1.13)
+    state.basesEfectivo = data.basesEfectivo && typeof data.basesEfectivo === 'object' ? data.basesEfectivo : {}; // opcional (v1.14)
 
     // Migración única: si quedó el arreglo "entregas" antiguo dentro del perfil,
     // lo movemos a la subcolección "entregas" y lo borramos del perfil.
@@ -181,6 +182,19 @@ export function guardarCampoPerfil(cambios) {
   marcarEscrituraInicio();
   setDoc(refPerfil(currentUid), cambios, { merge: true })
     .catch(err => { console.error(err); mostrarToast('No se pudo guardar. Revisa tu conexión.'); })
+    .finally(marcarEscrituraFin);
+}
+
+/** Guarda la base de efectivo de UN día: usuarios/{uid}.basesEfectivo.{fecha}.
+ *  Con updateDoc + FieldPath Firestore cambia solo esa entrada del mapa; las
+ *  bases de los demás días quedan intactas (no se reemplaza el mapa completo).
+ *  Quitar una base = guardarla en 0 (nunca se borra). Sin esperar al servidor,
+ *  igual que guardarCampoPerfil. */
+export function guardarBaseEfectivo(fechaKey, valor) {
+  if (!currentUid) return;
+  marcarEscrituraInicio();
+  updateDoc(refPerfil(currentUid), new FieldPath('basesEfectivo', fechaKey), valor)
+    .catch(err => { console.error(err); mostrarToast('No se pudo guardar la base. Revisa tu conexión.'); })
     .finally(marcarEscrituraFin);
 }
 

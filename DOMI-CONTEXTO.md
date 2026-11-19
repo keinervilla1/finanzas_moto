@@ -63,7 +63,7 @@ No solamente registrar información: **debe ayudar al usuario a tomar mejores de
 
 ## 4. Estado actual del proyecto
 
-- **Versión actual:** v1.13.0 (el historial completo está en `CHANGELOG.md`).
+- **Versión actual:** v1.14.0 (el historial completo está en `CHANGELOG.md`).
   El número se cambia en un solo sitio: `VERSION_APP` en `js/config.js`.
 - **Diseño:** verde y blanco, inspirado en iPhone.
 
@@ -91,6 +91,7 @@ js/
   sheets.js           → hojas de domicilio, frecuente, gasto; modales detalle, cálculo, meta
   cobros.js           → pantalla Cobros (agrupada por cliente) y registro de pagos
   cobro-whatsapp.js   → cobrar por WhatsApp (mensaje, teléfono) y "Datos de pago"
+  cierre.js           → "Cierre del día": efectivo esperado, entradas, pendientes, días anteriores
   clientes.js         → lista y edición de clientes (en "Más")
   respaldo.js         → "Respaldo de mis datos": exporta CSV + JSON (SOLO lee)
   navigation.js       → cambio de pantallas y barra inferior
@@ -109,7 +110,12 @@ motivo (la última pestaña abierta se guarda en el teléfono con ese nombre).
 - Inicio de sesión con Firebase (sesión persistente) y sincronización en tiempo real.
 - Funciona sin conexión (caché de Firestore + service worker) y avisa cuando hay versión nueva.
 - **Inicio:** ganancia neta de hoy, anillo de meta semanal, "Esta semana" y "Por cobrar",
-  botón "Agregar domicilio", "Ver cálculo del día" y lista de domicilios de hoy (más reciente arriba).
+  botón "Agregar domicilio", "Ver cierre del día" y lista de domicilios de hoy (más reciente arriba).
+- **Cierre del día** (hoja desde Inicio, flechas ‹ › para días anteriores): efectivo que deberías
+  tener (base + efectivo que entró − gastos en efectivo), lo que entró por efectivo y
+  transferencia (por `fechaPago`, incluye deudas viejas), lo trabajado, lo que quedó pendiente,
+  gastos y ganancia neta. Solo lee, salvo la base del día. Los abonos se cuentan el día en que se
+  usan (hasta la v1.14.1).
 - **Agregar / editar domicilio:** frecuentes como chips, cliente opcional, tipo
   **Normal / Contrata**, ¿pagó ya? (sí/no), medio de pago (efectivo/transferencia), observación.
 - **Detalle del domicilio:** ver, editar y eliminar (con confirmación).
@@ -122,7 +128,8 @@ motivo (la última pestaña abierta se guarda en el teléfono con ese nombre).
   Siempre se puede "Compartir de otra forma".
 - **Registros:** historial con filtros (semana, mes, 3 meses, todo) y "Cargar más".
 - **Semana:** meta, mejor día, promedio diario, días de la semana y semanas anteriores.
-- **Gastos:** por categoría, con filtros (hoy, semana, mes, todo); editar y eliminar.
+- **Gastos:** por categoría y medio de pago (efectivo/transferencia), con filtros (hoy, semana,
+  mes, todo); editar y eliminar.
 - **Más:** Datos (frecuentes, clientes y respaldo), Finanzas (gastos, meta semanal y datos de
   pago para cobrar), Cuenta
   (configuración y cerrar sesión).
@@ -154,6 +161,10 @@ El usuario ya tiene **información real e importante guardada**. Perder datos es
 - `datosPago`: texto libre (ej. "Nequi 300 123 4567") que va al final del mensaje de cobro por
   WhatsApp. **Opcional** (v1.13): si no existe se toma como vacío. Se guarda solo ese campo con
   `merge`, sin tocar `frecuentes` ni `meta`. Va incluido en el respaldo JSON (perfil).
+- `basesEfectivo`: mapa `{ "AAAA-MM-DD": número }` con el efectivo con el que se salió cada día
+  (v1.14, opcional; sin entrada = 0). Se guarda **un día a la vez** con
+  `updateDoc(perfil, FieldPath('basesEfectivo', fecha), valor)`: cambia solo esa entrada, nunca
+  el mapa completo. Quitar una base = guardarla en 0.
 - `entregas`: lista antigua (versión vieja). La migración la pasa a la subcolección y luego **la borra**. Ya no debería existir.
 
 **`usuarios/{uid}/entregas/{id}`** (un documento por domicilio; en Firestore se llama "entregas", no "domicilios")
@@ -166,6 +177,7 @@ El usuario ya tiene **información real e importante guardada**. Perder datos es
 
 **`usuarios/{uid}/gastos/{id}`**
 - `valor`, `categoria` (`gasolina`, `comida`, `mantenimiento`, `peajes` u `otros`), `descripcion`, `fecha`, `creadoEn`
+- `medioPago`: `"efectivo"` o `"transferencia"` (v1.14). **Los gastos anteriores no lo tienen: se toman como efectivo.**
 
 **`usuarios/{uid}/clientes/{id}`**
 - `nombre`, `telefono` (puede estar vacío; se guarda tal cual se escribió y solo se convierte
@@ -332,8 +344,11 @@ Preparar la aplicación para **miles de registros**.
 
 Una función por versión, en este orden:
 
-1. **v1.14 — Cierre del día:** efectivo, transferencia, gastos y cuánto efectivo
-   debería tener.
+1. **v1.14.1 — Abonos exactos en el cierre:** registrar cada pago recibido en Cobros (fecha,
+   cliente, valor, medio de pago) y guardar domicilios + abono + pago juntos con `writeBatch`.
+   Diseño propuesto (pendiente de aprobar): subcolección `usuarios/{uid}/pagos/{id}`, un
+   documento por pago recibido, con `abonoAntes` / `abonoDespues` para que el cierre sume la plata
+   real del día sin contar dos veces los domicilios. Necesita regla nueva en `firestore.rules`.
 2. **v1.15 — Ganancia real:** ingresos menos gastos por día, semana y mes.
 3. **v1.16 — Productividad:** mejores horas y días, promedio por domicilio,
    domicilios por hora.
@@ -349,15 +364,15 @@ al hacer el Cierre del día o la Ganancia real), nunca como una versión aparte 
 reescriba todo.
 
 **Versiones que van a tocar los datos** (avisar y pedir aprobación antes):
-- v1.14 — si se guarda una "base" de efectivo con la que se arranca el día, sería un
-  campo nuevo.
+- v1.14.1 — registro de pagos (probablemente una subcolección nueva `pagos`, con su regla en
+  `firestore.rules`, que hay que publicar en la consola de Firebase **antes** de subir la versión).
 - v1.19 — necesita una subcolección nueva (`mantenimientos`) y una regla nueva en
   `firestore.rules`, que hay que publicar a mano en la consola de Firebase.
 - Las demás, en principio, solo leen datos que ya existen.
 
 Ya hechos (ver `CHANGELOG.md`): Cobros agrupado por cliente con abono (v1.9.5–1.9.7),
 Clientes vinculados a domicilios y cobros (v1.9.0–1.9.4), menú Más reorganizado
-(v1.10.1), navegación y orden de domicilios (v1.11.0), respaldo: exportar datos (v1.12.0), cobrar por WhatsApp (v1.13.0).
+(v1.10.1), navegación y orden de domicilios (v1.11.0), respaldo: exportar datos (v1.12.0), cobrar por WhatsApp (v1.13.0), cierre del día (v1.14.0).
 
 > Esta lista se puede cambiar. Lo importante es avanzar en pasos pequeños y sin perder datos.
 

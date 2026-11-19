@@ -57,5 +57,7 @@ export {
   onSnapshot, getDocs, query, where, orderBy, limit, startAfter, serverTimestamp,
   // Solo lectura, directo del servidor (sin caer a la caché local): el
   // respaldo los usa para no exportar una copia incompleta estando sin señal.
-  getDocsFromServer, getDocFromServer
+  getDocsFromServer, getDocFromServer,
+  // Ruta a un campo dentro de un mapa (ej. basesEfectivo → "2026-11-19").
+  FieldPath
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';

@@ -6,7 +6,7 @@
 
 /** Versión visible de la app (pantalla "Más" y archivo de respaldo). Único
  *  sitio donde se cambia en cada versión. */
-export const VERSION_APP = '1.13.0';
+export const VERSION_APP = '1.14.0';
 
 /** Meta semanal por defecto para un usuario nuevo (pesos colombianos). */
 export const META_SEMANAL_DEFAULT = 800000;

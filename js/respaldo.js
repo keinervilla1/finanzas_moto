@@ -131,9 +131,10 @@ function csvGastos(gastos) {
     g.fecha || '',
     (CATEGORIAS_GASTO[g.categoria] || CATEGORIAS_GASTO.otros).label,
     numeroCSV(g.valor),
+    g.medioPago === 'transferencia' ? 'Transferencia' : 'Efectivo', // sin campo (antes de v1.14) = efectivo
     g.descripcion || ''
   ]);
-  return armarCSV(['Fecha', 'Categoría', 'Valor', 'Descripción'], filas);
+  return armarCSV(['Fecha', 'Categoría', 'Valor', 'Medio de pago', 'Descripción'], filas);
 }
 
 function csvClientes(clientes) {

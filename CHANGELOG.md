@@ -5,6 +5,60 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.14.0] — Cierre del día
+
+### Cambiado
+- **"Ver cálculo del día" ahora es "Ver cierre del día"**: pasa de ventanita a
+  hoja con scroll y flechas **‹ ›** para ver ayer o cualquier día anterior
+  (la flecha › se apaga en hoy). Conserva todo lo que mostraba antes
+  (domicilios, promedio, primer y último domicilio, gastos, ganancia neta).
+- **Lo que muestra:**
+  - **Efectivo que deberías tener** = base + efectivo que entró − gastos en
+    efectivo, con la cuenta escrita debajo.
+  - **Lo que te entró**, separado en efectivo y transferencia, por la fecha de
+    pago: incluye deudas de otros días cobradas ese día (y lo dice).
+  - **Lo que trabajaste**: cantidad y valor de los domicilios hechos ese día.
+  - **Te quedaron debiendo**: domicilios de ese día sin pagar al cierre de ese
+    día (aunque te los hayan pagado después).
+  - **Gastos** (con el desglose efectivo/transferencia si hay de los dos) y
+    **ganancia neta** (entró − gastos).
+  - Nota: los abonos se cuentan el día en que se usan para pagar domicilios
+    (se corrige en la v1.14.1).
+- Días de esta semana: sin lecturas extra (ya están en el teléfono). Días
+  anteriores: 3 consultas pequeñas de solo lectura, primero al servidor; si no
+  responde, usa la copia del teléfono y avisa "puede faltar información".
+
+### Agregado
+- **Base del día** (opcional): "Base con la que saliste · Poner" dentro del
+  cierre, con atajo "Igual que la última ($…)". Sin base cuenta como $0.
+- **Medio de pago en los gastos**: "¿Con qué lo pagaste? Efectivo /
+  Transferencia" al registrar o editar un gasto (viene en Efectivo). En la lista
+  de Gastos se marca "💳 Transferencia" cuando aplica.
+- **Respaldo**: el CSV de gastos tiene la columna nueva "Medio de pago".
+- `js/cierre.js` (nuevo); `ordenCronologico()` en `calculos.js` (un solo orden
+  para Inicio y el cierre).
+
+### Datos
+- **Campo nuevo opcional `gastos/{id}.medioPago`** (`efectivo` /
+  `transferencia`). Los gastos anteriores no se tocan: sin el campo cuentan como
+  efectivo (al editarlos se les guarda el que elijas).
+- **Campo nuevo opcional `usuarios/{uid}.basesEfectivo`**: mapa
+  `{ "AAAA-MM-DD": número }`. Se guarda un día a la vez con
+  `updateDoc` + `FieldPath('basesEfectivo', fecha)`: cambia **solo esa
+  entrada** y nunca reemplaza el mapa, así que las bases de otros días quedan
+  intactas. Quitar una base = guardarla en 0. Va en el respaldo JSON (perfil).
+- Nada se borra ni se renombra; las reglas de Firestore no cambian; el cálculo
+  del cierre no escribe nada.
+
+### Quitado
+- El modal "Cálculo del día" (`#modalCalculo`) y su código en `sheets.js`:
+  lo reemplaza el cierre.
+
+### Notas
+- Service worker: precachea `js/cierre.js`; caché `v31`.
+
+---
+
 ## [1.13.0] — Cobrar por WhatsApp
 
 ### Agregado

@@ -31,6 +31,7 @@ import './js/render.js';       // registra renderTodo y ata los filtros de Regis
 import './js/sheets.js';       // ata todos los botones de hojas y modales
 import './js/clientes.js';     // sección "Clientes" en la pestaña Más
 import './js/cobros.js';       // pantalla "Cobros" (agrupa deudas por cliente)
+import './js/cierre.js';       // "Cierre del día" (hoja desde Inicio)
 import './js/respaldo.js';     // "Respaldo de mis datos" en Más (solo lee y exporta)
 import './js/actualizacion.js'; // registro del SW + aviso de nueva versión
 import { irAPestana } from './js/navigation.js';
@@ -55,7 +56,7 @@ onAuthStateChanged(auth, (user) => {
     setMigracionHecha(false);
     detenerSuscripciones();
     limpiarGruposEntregasSemana();
-    state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.clientes = []; state.meta = META_SEMANAL_DEFAULT; state.datosPago = '';
+    state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.clientes = []; state.meta = META_SEMANAL_DEFAULT; state.datosPago = ''; state.basesEfectivo = {};
     registros.items = []; registros.cursor = null; registros.hasMore = true;
     historialSemanas.cargado = false; historialSemanas.semanas = [];
     el.appContainer.style.display = 'none';
