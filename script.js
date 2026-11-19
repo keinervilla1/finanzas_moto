@@ -32,7 +32,6 @@ import './js/sheets.js';       // ata todos los botones de hojas y modales
 import './js/clientes.js';     // sección "Clientes" en la pestaña Más
 import './js/cobros.js';       // pantalla "Cobros" (agrupa deudas por cliente)
 import './js/actualizacion.js'; // registro del SW + aviso de nueva versión
-import './js/pull-refresh.js';  // arrastrar hacia abajo para recargar
 import { irAPestana } from './js/navigation.js';
 import { renderSaludo, resetAuthUI } from './js/auth.js';
 

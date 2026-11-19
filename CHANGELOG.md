@@ -5,6 +5,32 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.11.1] — La app ya no se recarga al deslizar hacia abajo
+
+### Corregido
+- **Deslizar hacia abajo con fuerza estando arriba recargaba la app sin
+  querer.** Era el "arrastrar para actualizar" propio de la app (v1.9.3–v1.9.12).
+  Se quitó por completo: `js/pull-refresh.js`, su spinner en `index.html`, su
+  CSS y su entrada en el service worker.
+- El gesto de recarga **del navegador** también queda bloqueado:
+  `overscroll-behavior-y: none` ahora va en `html` y `body` (antes solo en
+  `body`, y el navegador lo toma de `html`). La lista principal ya tenía
+  `contain`.
+- Las hojas que suben desde abajo y el modal de cuenta tienen
+  `overscroll-behavior-y: contain`: al llegar al final de su scroll ya no
+  arrastran la pantalla de atrás.
+
+### Cómo se actualiza ahora
+- Con el aviso **"Hay una versión nueva de Domi · Actualizar"**, que aparece
+  solo al abrir la app o volver a ella cuando hay una versión publicada. También
+  sirve cerrar la app del todo y volver a abrirla.
+
+### Sin cambios
+- Datos en Firestore, scroll normal de las listas, hojas y modales.
+- Service worker: caché `v28`.
+
+---
+
 ## [1.11.0] — Navegación reordenada y lo más reciente arriba
 
 ### Cambiado

@@ -1,8 +1,8 @@
 /* =========================================================================
    DOMI — Actualización de la app
    Registra el service worker y avisa con un banner "Actualizar" cuando hay una
-   versión nueva desplegada. Para recargar a mano está el pull-to-refresh
-   (js/pull-refresh.js).
+   versión nueva desplegada. Es la única forma de actualizar desde la app: el
+   "arrastrar para recargar" se quitó en v1.11.1 (recargaba sin querer).
    ========================================================================= */
 
 let banner;

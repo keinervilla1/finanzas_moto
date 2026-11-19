@@ -63,7 +63,7 @@ No solamente registrar información: **debe ayudar al usuario a tomar mejores de
 
 ## 4. Estado actual del proyecto
 
-- **Versión actual:** v1.11.0 (el historial completo está en `CHANGELOG.md`).
+- **Versión actual:** v1.11.1 (el historial completo está en `CHANGELOG.md`).
 - **Diseño:** verde y blanco, inspirado en iPhone.
 
 ### Archivos actuales
@@ -93,7 +93,6 @@ js/
   navigation.js       → cambio de pantallas y barra inferior
   auth.js             → login, registro y configuración de cuenta
   actualizacion.js    → registro del service worker y aviso de versión nueva
-  pull-refresh.js     → arrastrar hacia abajo para recargar
 CHANGELOG.md, README.md, DOMI-CONTEXTO.md, CLAUDE.md
 ```
 
@@ -120,7 +119,9 @@ motivo (la última pestaña abierta se guarda en el teléfono con ese nombre).
 - **Más:** Datos (frecuentes y clientes), Finanzas (gastos y meta semanal), Cuenta
   (configuración y cerrar sesión).
 - Barra "Sincronizando…", pantalla de carga, protección contra doble toque,
-  recordar la última pestaña, arrastrar para actualizar.
+  recordar la última pestaña.
+- La app **no** se recarga al deslizar hacia abajo (se quitó en v1.11.1). Las versiones
+  nuevas llegan con el aviso "Hay una versión nueva · Actualizar".
 - Migración automática de datos antiguos (arreglo `entregas` del perfil → subcolección).
 
 ### Trabajo pendiente conocido
