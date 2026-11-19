@@ -55,7 +55,7 @@ onAuthStateChanged(auth, (user) => {
     setMigracionHecha(false);
     detenerSuscripciones();
     limpiarGruposEntregasSemana();
-    state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.clientes = []; state.meta = META_SEMANAL_DEFAULT;
+    state.entregas = []; state.gastos = []; state.deudas = []; state.frecuentes = []; state.clientes = []; state.meta = META_SEMANAL_DEFAULT; state.datosPago = '';
     registros.items = []; registros.cursor = null; registros.hasMore = true;
     historialSemanas.cargado = false; historialSemanas.semanas = [];
     el.appContainer.style.display = 'none';

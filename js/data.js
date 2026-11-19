@@ -72,6 +72,7 @@ function suscribirsePerfil(uid) {
     const data = snap.data();
     state.frecuentes = data.frecuentes || [];
     state.meta = data.meta || META_SEMANAL_DEFAULT;
+    state.datosPago = typeof data.datosPago === 'string' ? data.datosPago : ''; // campo opcional (v1.13)
 
     // Migración única: si quedó el arreglo "entregas" antiguo dentro del perfil,
     // lo movemos a la subcolección "entregas" y lo borramos del perfil.
@@ -167,6 +168,20 @@ export function avisarFaltaIndice(queDato, err) {
     indiceAvisado = true;
     mostrarToast('Firestore está preparando un índice. Los históricos pueden tardar unos minutos en aparecer.');
   }
+}
+
+/* ---------------- Guardar un campo suelto del perfil ------------------- */
+
+/** Escribe SOLO los campos dados en usuarios/{uid}, mezclando (merge) con lo
+ *  que ya hay: no toca frecuentes, meta ni nada más. No se espera la respuesta
+ *  del servidor a propósito: sin señal, Firestore lo guarda en el teléfono y lo
+ *  sube al volver, en vez de dejar el botón "Guardando…" colgado. */
+export function guardarCampoPerfil(cambios) {
+  if (!currentUid) return;
+  marcarEscrituraInicio();
+  setDoc(refPerfil(currentUid), cambios, { merge: true })
+    .catch(err => { console.error(err); mostrarToast('No se pudo guardar. Revisa tu conexión.'); })
+    .finally(marcarEscrituraFin);
 }
 
 /* ---------------- Guardar perfil (frecuentes / meta) ------------------- */

@@ -5,6 +5,61 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.13.0] — Cobrar por WhatsApp
+
+### Agregado
+- **Botón de WhatsApp en cada tarjeta de Cobros.** Abre WhatsApp con un mensaje
+  listo:
+  ```
+  Hola Juan 👋, te comparto lo pendiente de domicilios:
+  • 15/11 - $6.000
+  • 16/11 - $6.000
+  • 17/11 - $8.000
+  Total: $20.000
+  (Ya tienes un abono de $2.000, quedan $18.000)
+  Puedes pagarme por:
+  Nequi 300 123 4567
+  ¡Gracias!
+  ```
+  Pendientes del más antiguo al más nuevo, fechas cortas (15/11) y dinero con
+  el formato de la app. La línea del abono solo sale si hay abono (si lo cubre
+  todo, lo dice); "Puedes pagarme por" solo si guardaste datos de pago.
+- **Según el caso:**
+  - Cliente con teléfono → WhatsApp **directo** a su chat, en un toque.
+  - Cliente registrado sin teléfono (o con uno que no sirve) → hoja con el
+    mensaje y un campo para escribirlo; "Guardar y abrir WhatsApp" guarda
+    **solo** `clientes/{id}.telefono`, tal cual se escribió.
+  - Grupo sin cliente registrado (domicilios viejos sin `clienteId`) →
+    "Elegir chat en WhatsApp" (no hay dónde guardar un teléfono).
+  - Siempre: "Compartir de otra forma" (menú de compartir del teléfono, o
+    copia el mensaje si no hay menú).
+  - Si WhatsApp no abre en 2,5 s (no instalado), aparece la hoja con la opción
+    de compartir.
+- **Teléfono escrito de cualquier forma**: `300 123 4567`, `300-123-4567`,
+  `(300) 1234567`, `3001234567` → se les pone el 57; `+57…`, `57…`, `0057…` se
+  respetan; un número de otro país con `+` también. El dato guardado no se
+  modifica: solo se convierte al armar el enlace.
+- **Más > Finanzas > "Datos de pago para cobrar"**: texto libre (hasta 300
+  caracteres) que se agrega al final del mensaje.
+- `js/cobro-whatsapp.js` (nuevo); `formatFechaDiaMes()` en `utils.js`.
+
+### Datos
+- **Campo nuevo opcional `usuarios/{uid}.datosPago`** (texto). Se escribe solo
+  ese campo con `merge` (no toca `frecuentes` ni `meta`); si no existe se toma
+  como vacío. Va incluido en el respaldo JSON, dentro de `perfil`.
+- Las únicas escrituras de esta versión: `datosPago` del perfil y `telefono`
+  del cliente. Ningún domicilio se toca; nada se borra ni se renombra. Las
+  reglas de Firestore no cambian.
+- Ninguna de las dos espera al servidor para seguir: sin señal se guardan en
+  el teléfono y suben al volver.
+
+### Notas
+- WhatsApp se abre con su enlace directo (`whatsapp://`), porque desde una app
+  instalada en iPhone los enlaces web (`wa.me`) a veces se quedan en Safari.
+- Service worker: precachea `js/cobro-whatsapp.js`; caché `v30`.
+
+---
+
 ## [1.12.0] — Respaldo: exportar mis datos
 
 ### Agregado

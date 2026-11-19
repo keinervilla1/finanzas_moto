@@ -285,6 +285,11 @@
             <span class="settings-row__label">Meta semanal</span>
             <span class="settings-row__chevron">›</span>
           </button>
+          <button class="settings-row" id="btnAbrirDatosPago">
+            <span class="settings-row__icon">💳</span>
+            <span class="settings-row__label">Datos de pago para cobrar</span>
+            <span class="settings-row__chevron">›</span>
+          </button>
         </div>
       </div>
 
@@ -460,6 +465,43 @@
 
   <div class="sheet__actions" style="margin-top:16px">
     <button class="btn-ghost" id="btnCerrarRespaldo">Cerrar</button>
+  </div>
+</div>
+
+<!-- ============ BOTTOM SHEET: COBRAR POR WHATSAPP ============ -->
+<div class="sheet-backdrop" id="sheetBackdropWhatsApp"></div>
+<div class="sheet" id="sheetWhatsApp">
+  <div class="sheet__handle"></div>
+  <h3 class="sheet__title" id="waTitulo">Cobrar por WhatsApp</h3>
+  <p class="hint" id="waAviso"></p>
+  <pre class="wa-mensaje" id="waMensaje"></pre>
+
+  <label class="field" id="waCampoTelefono">
+    <span>Teléfono del cliente</span>
+    <input type="tel" id="inputWaTelefono" placeholder="Ej: 300 123 4567" inputmode="tel" autocomplete="off">
+  </label>
+
+  <button class="btn-primary" id="btnWaAbrir">Guardar y abrir WhatsApp</button>
+  <button class="btn-tertiary" id="btnWaCompartir" style="margin:10px 0 0">Compartir de otra forma</button>
+
+  <div class="sheet__actions" style="margin-top:10px">
+    <button class="btn-ghost" id="btnWaCancelar">Cancelar</button>
+  </div>
+</div>
+
+<!-- ============ BOTTOM SHEET: DATOS DE PAGO PARA COBRAR ============ -->
+<div class="sheet-backdrop" id="sheetBackdropDatosPago"></div>
+<div class="sheet" id="sheetDatosPago">
+  <div class="sheet__handle"></div>
+  <h3 class="sheet__title">Datos de pago para cobrar</h3>
+  <p class="hint">Se agregan al final del mensaje de cobro por WhatsApp. Déjalo vacío si no quieres incluirlos.</p>
+  <label class="field">
+    <span>Cómo te pueden pagar</span>
+    <textarea id="inputDatosPago" rows="3" maxlength="300" placeholder="Ej: Nequi 300 123 4567"></textarea>
+  </label>
+  <div class="sheet__actions">
+    <button class="btn-ghost" id="btnCancelarDatosPago">Cancelar</button>
+    <button class="btn-primary" id="btnGuardarDatosPago">Guardar</button>
   </div>
 </div>
 

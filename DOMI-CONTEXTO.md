@@ -63,7 +63,7 @@ No solamente registrar información: **debe ayudar al usuario a tomar mejores de
 
 ## 4. Estado actual del proyecto
 
-- **Versión actual:** v1.12.0 (el historial completo está en `CHANGELOG.md`).
+- **Versión actual:** v1.13.0 (el historial completo está en `CHANGELOG.md`).
   El número se cambia en un solo sitio: `VERSION_APP` en `js/config.js`.
 - **Diseño:** verde y blanco, inspirado en iPhone.
 
@@ -90,6 +90,7 @@ js/
   render.js           → Inicio, Semana, Registros, Gastos, Frecuentes, historial
   sheets.js           → hojas de domicilio, frecuente, gasto; modales detalle, cálculo, meta
   cobros.js           → pantalla Cobros (agrupada por cliente) y registro de pagos
+  cobro-whatsapp.js   → cobrar por WhatsApp (mensaje, teléfono) y "Datos de pago"
   clientes.js         → lista y edición de clientes (en "Más")
   respaldo.js         → "Respaldo de mis datos": exporta CSV + JSON (SOLO lee)
   navigation.js       → cambio de pantallas y barra inferior
@@ -115,10 +116,15 @@ motivo (la última pestaña abierta se guarda en el teléfono con ese nombre).
 - **Cobros:** domicilios sin pagar agrupados por cliente; pagar marcando domicilios o
   escribiendo un monto (paga del más antiguo al más nuevo); el sobrante queda como
   **abono del cliente** (solo clientes registrados).
+- **Cobrar por WhatsApp:** botón en cada tarjeta de Cobros. Con teléfono abre el chat directo
+  con el mensaje listo (pendientes por día, total, abono y datos de pago); sin teléfono deja
+  escribirlo (se guarda en `clientes/{id}.telefono`); los grupos sin cliente eligen el chat.
+  Siempre se puede "Compartir de otra forma".
 - **Registros:** historial con filtros (semana, mes, 3 meses, todo) y "Cargar más".
 - **Semana:** meta, mejor día, promedio diario, días de la semana y semanas anteriores.
 - **Gastos:** por categoría, con filtros (hoy, semana, mes, todo); editar y eliminar.
-- **Más:** Datos (frecuentes, clientes y respaldo), Finanzas (gastos y meta semanal), Cuenta
+- **Más:** Datos (frecuentes, clientes y respaldo), Finanzas (gastos, meta semanal y datos de
+  pago para cobrar), Cuenta
   (configuración y cerrar sesión).
 - **Respaldo:** exporta domicilios, gastos y clientes a CSV (Excel, `;`, con tildes) y un
   JSON completo. Lee directo del servidor (necesita internet) y nunca escribe en Firestore.
@@ -145,6 +151,9 @@ El usuario ya tiene **información real e importante guardada**. Perder datos es
 **`usuarios/{uid}`** (perfil, un solo documento)
 - `frecuentes`: lista de `{ id, nombre, valor }`
 - `meta`: número (por defecto 800000)
+- `datosPago`: texto libre (ej. "Nequi 300 123 4567") que va al final del mensaje de cobro por
+  WhatsApp. **Opcional** (v1.13): si no existe se toma como vacío. Se guarda solo ese campo con
+  `merge`, sin tocar `frecuentes` ni `meta`. Va incluido en el respaldo JSON (perfil).
 - `entregas`: lista antigua (versión vieja). La migración la pasa a la subcolección y luego **la borra**. Ya no debería existir.
 
 **`usuarios/{uid}/entregas/{id}`** (un documento por domicilio; en Firestore se llama "entregas", no "domicilios")
@@ -159,7 +168,8 @@ El usuario ya tiene **información real e importante guardada**. Perder datos es
 - `valor`, `categoria` (`gasolina`, `comida`, `mantenimiento`, `peajes` u `otros`), `descripcion`, `fecha`, `creadoEn`
 
 **`usuarios/{uid}/clientes/{id}`**
-- `nombre`, `telefono` (puede estar vacío), `creadoEn`
+- `nombre`, `telefono` (puede estar vacío; se guarda tal cual se escribió y solo se convierte
+  a formato WhatsApp +57 al armar el enlace), `creadoEn`
 - `abono`: número. Solo existe si alguna vez sobró dinero en un cobro.
 
 **Índices:** `entregas` por `pagado` + `fechaPago`, uno ascendente y otro descendente (`firestore.indexes.json`).
@@ -322,16 +332,15 @@ Preparar la aplicación para **miles de registros**.
 
 Una función por versión, en este orden:
 
-1. **v1.13 — Cobrar por WhatsApp** desde Cobros: mensaje listo con lo que debe el cliente.
-2. **v1.14 — Cierre del día:** efectivo, transferencia, gastos y cuánto efectivo
+1. **v1.14 — Cierre del día:** efectivo, transferencia, gastos y cuánto efectivo
    debería tener.
-3. **v1.15 — Ganancia real:** ingresos menos gastos por día, semana y mes.
-4. **v1.16 — Productividad:** mejores horas y días, promedio por domicilio,
+2. **v1.15 — Ganancia real:** ingresos menos gastos por día, semana y mes.
+3. **v1.16 — Productividad:** mejores horas y días, promedio por domicilio,
    domicilios por hora.
-5. **v1.17 — Registrar más rápido:** repetir el último domicilio, frecuentes de un toque.
-6. **v1.18 — Modo oscuro.**
-7. **v1.19 — Mantenimiento de la moto** (aceite, llantas, kit, SOAT) con avisos.
-8. **v2.0 — Pantalla de bienvenida y meta diaria** calculada desde la semanal.
+4. **v1.17 — Registrar más rápido:** repetir el último domicilio, frecuentes de un toque.
+5. **v1.18 — Modo oscuro.**
+6. **v1.19 — Mantenimiento de la moto** (aceite, llantas, kit, SOAT) con avisos.
+7. **v2.0 — Pantalla de bienvenida y meta diaria** calculada desde la semanal.
 
 **Tarea técnica continua (sin versión propia):** terminar la arquitectura modular
 (separar domicilios, gastos y estadísticas de `render.js` y `sheets.js`). Se hace
@@ -348,7 +357,7 @@ reescriba todo.
 
 Ya hechos (ver `CHANGELOG.md`): Cobros agrupado por cliente con abono (v1.9.5–1.9.7),
 Clientes vinculados a domicilios y cobros (v1.9.0–1.9.4), menú Más reorganizado
-(v1.10.1), navegación y orden de domicilios (v1.11.0), respaldo: exportar datos (v1.12.0).
+(v1.10.1), navegación y orden de domicilios (v1.11.0), respaldo: exportar datos (v1.12.0), cobrar por WhatsApp (v1.13.0).
 
 > Esta lista se puede cambiar. Lo importante es avanzar en pasos pequeños y sin perder datos.
 

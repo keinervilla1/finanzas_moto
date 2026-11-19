@@ -13,7 +13,8 @@ export const state = {
   deudas: [],     // TODOS los domicilios con pagado:false (sin importar la semana)
   frecuentes: [],
   clientes: [],   // personas/negocios registrados para agrupar cobros
-  meta: META_SEMANAL_DEFAULT
+  meta: META_SEMANAL_DEFAULT,
+  datosPago: ''   // texto libre (ej. "Nequi 300…") para el mensaje de cobro; '' si no existe
 };
 
 /** Datos "bajo demanda" para las pantallas Registros, Gastos e Historial. */

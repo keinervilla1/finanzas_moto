@@ -55,6 +55,12 @@ export function formatFechaCorta(fechaKey) {
   return `${d.getDate()} ${MESES[d.getMonth()].slice(0, 3)}`;
 }
 
+/** "2026-11-15" → "15/11" (para mensajes, sin depender de la zona horaria). */
+export function formatFechaDiaMes(fechaKey) {
+  const [, mes, dia] = String(fechaKey || '').split('-');
+  return dia && mes ? `${dia}/${mes}` : '—';
+}
+
 export function rangoSemanaTexto(monday) {
   const sunday = addDays(monday, 6);
   return `${monday.getDate()} ${MESES[monday.getMonth()].slice(0, 3)} – ${sunday.getDate()} ${MESES[sunday.getMonth()].slice(0, 3)}`;

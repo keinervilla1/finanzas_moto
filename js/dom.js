@@ -77,6 +77,15 @@ export const el = {
   btnCompartirRespaldo: $('#btnCompartirRespaldo'),
   appVersion: $('#appVersion'),
 
+  waTitulo: $('#waTitulo'),
+  waAviso: $('#waAviso'),
+  waMensaje: $('#waMensaje'),
+  waCampoTelefono: $('#waCampoTelefono'),
+  inputWaTelefono: $('#inputWaTelefono'),
+  btnWaAbrir: $('#btnWaAbrir'),
+  btnWaCompartir: $('#btnWaCompartir'),
+  inputDatosPago: $('#inputDatosPago'),
+
   inputGastoValor: $('#inputGastoValor'),
   inputGastoDescripcion: $('#inputGastoDescripcion'),
   inputGastoFecha: $('#inputGastoFecha'),

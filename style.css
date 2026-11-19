@@ -649,3 +649,25 @@ ul{ list-style:none; margin:0; padding:0; }
 .respaldo-sueltos{ margin-top:18px; }
 #respaldoArchivos{ border:1px solid var(--border); box-shadow:none; }
 #respaldoArchivos .settings-row__chevron{ font-size:11px; font-weight:700; letter-spacing:.04em; }
+
+/* ---------- Cobrar por WhatsApp (Cobros) ---------- */
+.btn-wa{
+  width:40px; height:40px; border-radius:12px; flex-shrink:0; border:none; cursor:pointer;
+  background:#E7F8EE; color:#1FAF5A; margin-left:2px;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform .15s ease, background .15s ease;
+}
+.btn-wa svg{ width:22px; height:22px; fill:currentColor; }
+.btn-wa:active{ transform:scale(.92); background:#CFF1DD; }
+.wa-mensaje{
+  margin:0 0 14px; padding:12px 14px; max-height:30vh; overflow-y:auto;
+  background:var(--verde-50); border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  font-family:inherit; font-size:13.5px; line-height:1.45; color:var(--text-900);
+  white-space:pre-wrap; word-break:break-word;
+}
+.field textarea{
+  width:100%; border:1.5px solid var(--border); background:var(--verde-50);
+  border-radius:var(--radius-sm); padding:13px 14px; font-size:15px; color:var(--text-900);
+  font-family:inherit; outline:none; resize:vertical; transition:border-color .15s ease;
+}
+.field textarea:focus{ border-color:var(--verde-500); }
