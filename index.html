@@ -261,6 +261,14 @@
         <p class="hint">Personas o negocios que te acumulan pagos. Se agrupan en "Cobros".</p>
         <ul class="frecuentes-list" id="listaClientes"><!-- JS --></ul>
         <p class="empty-state" id="emptyClientes">No tienes clientes registrados todavía.</p>
+
+        <div class="settings-card" style="margin-top:18px">
+          <button class="settings-row" id="btnAbrirRespaldo">
+            <span class="settings-row__icon">💾</span>
+            <span class="settings-row__label">Respaldo de mis datos</span>
+            <span class="settings-row__chevron">›</span>
+          </button>
+        </div>
       </div>
 
       <!-- ---------- Herramientas financieras ---------- -->
@@ -299,7 +307,7 @@
         <button class="link-btn link-btn--danger link-btn--block" id="btnCerrarSesion" style="margin-top:14px">Cerrar sesión</button>
       </div>
 
-      <p class="app-version">Domi v1.11.1</p>
+      <p class="app-version" id="appVersion">Domi</p><!-- la versión la pone script.js desde config.js -->
 
     </section>
 
@@ -430,6 +438,28 @@
   <div class="sheet__actions">
     <button class="btn-ghost" id="btnCancelarCliente">Cancelar</button>
     <button class="btn-primary" id="btnGuardarCliente">Guardar</button>
+  </div>
+</div>
+
+<!-- ============ BOTTOM SHEET: RESPALDO (solo exportar) ============ -->
+<div class="sheet-backdrop" id="sheetBackdropRespaldo"></div>
+<div class="sheet" id="sheetRespaldo">
+  <div class="sheet__handle"></div>
+  <h3 class="sheet__title">Respaldo de mis datos</h3>
+  <p class="hint">Descarga una copia de tus domicilios, gastos y clientes para Excel, más un archivo completo. Solo lee tus datos: no cambia nada. Necesita internet.</p>
+  <p class="respaldo-ultimo" id="respaldoUltimo">Último respaldo: Nunca</p>
+
+  <button class="btn-primary" id="btnPrepararRespaldo">Preparar respaldo</button>
+
+  <div id="respaldoListo" style="display:none">
+    <p class="respaldo-resumen" id="respaldoResumen"></p>
+    <button class="btn-primary" id="btnCompartirRespaldo">Guardar o compartir todo</button>
+    <p class="settings-group__label respaldo-sueltos">O cada archivo por separado</p>
+    <div class="settings-card" id="respaldoArchivos"><!-- JS --></div>
+  </div>
+
+  <div class="sheet__actions" style="margin-top:16px">
+    <button class="btn-ghost" id="btnCerrarRespaldo">Cerrar</button>
   </div>
 </div>
 

@@ -53,6 +53,7 @@ Modulos (`js/`):
 | `auth.js` | Login/registro y configuracion de cuenta. |
 | `clientes.js` | Clientes registrados (crear/editar/borrar en "Mas"). |
 | `cobros.js` | Pantalla "Cobros": agrupa deudas por cliente y registra pagos. |
+| `respaldo.js` | "Respaldo de mis datos": exporta CSV (Excel) + JSON. Solo lee de Firestore. |
 | `actualizacion.js` | Registro del service worker + aviso de version nueva. |
 
 ## Puesta en marcha

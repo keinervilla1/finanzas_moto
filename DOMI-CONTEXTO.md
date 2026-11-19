@@ -63,7 +63,8 @@ No solamente registrar información: **debe ayudar al usuario a tomar mejores de
 
 ## 4. Estado actual del proyecto
 
-- **Versión actual:** v1.11.1 (el historial completo está en `CHANGELOG.md`).
+- **Versión actual:** v1.12.0 (el historial completo está en `CHANGELOG.md`).
+  El número se cambia en un solo sitio: `VERSION_APP` en `js/config.js`.
 - **Diseño:** verde y blanco, inspirado en iPhone.
 
 ### Archivos actuales
@@ -78,7 +79,7 @@ firestore.rules       → reglas de seguridad (copiar a la consola de Firebase)
 firestore.indexes.json→ índices compuestos que necesita la app
 icons/                → íconos de la PWA (logo-fuente.png es el diseño original, no se usa en la app)
 js/
-  config.js           → constantes (meta por defecto, categorías de gasto, navegación)
+  config.js           → constantes (versión, meta por defecto, categorías de gasto, navegación)
   utils.js            → fechas, formato de dinero, funciones puras
   firebase.js         → inicialización del SDK y referencias a Firestore
   dom.js              → referencias a elementos, hojas, modales, toast
@@ -90,6 +91,7 @@ js/
   sheets.js           → hojas de domicilio, frecuente, gasto; modales detalle, cálculo, meta
   cobros.js           → pantalla Cobros (agrupada por cliente) y registro de pagos
   clientes.js         → lista y edición de clientes (en "Más")
+  respaldo.js         → "Respaldo de mis datos": exporta CSV + JSON (SOLO lee)
   navigation.js       → cambio de pantallas y barra inferior
   auth.js             → login, registro y configuración de cuenta
   actualizacion.js    → registro del service worker y aviso de versión nueva
@@ -116,8 +118,11 @@ motivo (la última pestaña abierta se guarda en el teléfono con ese nombre).
 - **Registros:** historial con filtros (semana, mes, 3 meses, todo) y "Cargar más".
 - **Semana:** meta, mejor día, promedio diario, días de la semana y semanas anteriores.
 - **Gastos:** por categoría, con filtros (hoy, semana, mes, todo); editar y eliminar.
-- **Más:** Datos (frecuentes y clientes), Finanzas (gastos y meta semanal), Cuenta
+- **Más:** Datos (frecuentes, clientes y respaldo), Finanzas (gastos y meta semanal), Cuenta
   (configuración y cerrar sesión).
+- **Respaldo:** exporta domicilios, gastos y clientes a CSV (Excel, `;`, con tildes) y un
+  JSON completo. Lee directo del servidor (necesita internet) y nunca escribe en Firestore.
+  Muestra "Último respaldo: …" (guardado en el teléfono).
 - Barra "Sincronizando…", pantalla de carga, protección contra doble toque,
   recordar la última pestaña.
 - La app **no** se recarga al deslizar hacia abajo (se quitó en v1.11.1). Las versiones
@@ -159,7 +164,8 @@ El usuario ya tiene **información real e importante guardada**. Perder datos es
 
 **Índices:** `entregas` por `pagado` + `fechaPago`, uno ascendente y otro descendente (`firestore.indexes.json`).
 
-**En el teléfono (no en Firestore):** `localStorage.domi_ultima_pestana`.
+**En el teléfono (no en Firestore):** `localStorage.domi_ultima_pestana` y
+`localStorage.domi_ultimo_respaldo_{uid}` (fecha ISO del último respaldo descargado).
 
 > No hay "abonos" por domicilio: cada domicilio está pagado o no. El abono se guarda en el **cliente**.
 
@@ -314,17 +320,35 @@ Preparar la aplicación para **miles de registros**.
 
 ## 14. Hoja de ruta (propuesta)
 
-Orden sugerido, una versión pequeña a la vez:
+Una función por versión, en este orden:
 
-1. **v1.12:** Estadísticas: ganancia neta (ingresos − gastos) por día, semana y mes.
-2. **v1.13:** Productividad: domicilios por hora, mejores días y horarios.
-3. **v1.14:** Respaldo: exportar los datos (CSV/JSON).
-4. **v2.0:** terminar la arquitectura modular (la división en módulos de `js/` ya
-   está hecha; falta separar domicilios, gastos y estadísticas de `render.js` y `sheets.js`).
+1. **v1.13 — Cobrar por WhatsApp** desde Cobros: mensaje listo con lo que debe el cliente.
+2. **v1.14 — Cierre del día:** efectivo, transferencia, gastos y cuánto efectivo
+   debería tener.
+3. **v1.15 — Ganancia real:** ingresos menos gastos por día, semana y mes.
+4. **v1.16 — Productividad:** mejores horas y días, promedio por domicilio,
+   domicilios por hora.
+5. **v1.17 — Registrar más rápido:** repetir el último domicilio, frecuentes de un toque.
+6. **v1.18 — Modo oscuro.**
+7. **v1.19 — Mantenimiento de la moto** (aceite, llantas, kit, SOAT) con avisos.
+8. **v2.0 — Pantalla de bienvenida y meta diaria** calculada desde la semanal.
+
+**Tarea técnica continua (sin versión propia):** terminar la arquitectura modular
+(separar domicilios, gastos y estadísticas de `render.js` y `sheets.js`). Se hace
+poco a poco, dentro de la versión que toque cada parte (por ejemplo, `gastos.js`
+al hacer el Cierre del día o la Ganancia real), nunca como una versión aparte que
+reescriba todo.
+
+**Versiones que van a tocar los datos** (avisar y pedir aprobación antes):
+- v1.14 — si se guarda una "base" de efectivo con la que se arranca el día, sería un
+  campo nuevo.
+- v1.19 — necesita una subcolección nueva (`mantenimientos`) y una regla nueva en
+  `firestore.rules`, que hay que publicar a mano en la consola de Firebase.
+- Las demás, en principio, solo leen datos que ya existen.
 
 Ya hechos (ver `CHANGELOG.md`): Cobros agrupado por cliente con abono (v1.9.5–1.9.7),
 Clientes vinculados a domicilios y cobros (v1.9.0–1.9.4), menú Más reorganizado
-(v1.10.1), navegación y orden de domicilios (v1.11.0).
+(v1.10.1), navegación y orden de domicilios (v1.11.0), respaldo: exportar datos (v1.12.0).
 
 > Esta lista se puede cambiar. Lo importante es avanzar en pasos pequeños y sin perder datos.
 

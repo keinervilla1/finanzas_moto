@@ -17,7 +17,7 @@
      usuarios/{uid}/gastos/{id}    → un documento por gasto
    ========================================================================= */
 
-import { CLAVE_ULTIMA_PESTANA, META_SEMANAL_DEFAULT } from './js/config.js';
+import { CLAVE_ULTIMA_PESTANA, META_SEMANAL_DEFAULT, VERSION_APP } from './js/config.js';
 import { toDateKey } from './js/utils.js';
 import { auth, onAuthStateChanged } from './js/firebase.js';
 import { el, ocultarLoaderInicial } from './js/dom.js';
@@ -31,9 +31,12 @@ import './js/render.js';       // registra renderTodo y ata los filtros de Regis
 import './js/sheets.js';       // ata todos los botones de hojas y modales
 import './js/clientes.js';     // sección "Clientes" en la pestaña Más
 import './js/cobros.js';       // pantalla "Cobros" (agrupa deudas por cliente)
+import './js/respaldo.js';     // "Respaldo de mis datos" en Más (solo lee y exporta)
 import './js/actualizacion.js'; // registro del SW + aviso de nueva versión
 import { irAPestana } from './js/navigation.js';
 import { renderSaludo, resetAuthUI } from './js/auth.js';
+
+el.appVersion.textContent = `Domi v${VERSION_APP}`;
 
 /* ==================== Arranque / cierre de sesión ======================= */
 

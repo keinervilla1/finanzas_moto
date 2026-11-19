@@ -5,6 +5,51 @@ Formato: lo más reciente arriba. Cada versión es funcional por sí sola.
 
 ---
 
+## [1.12.0] — Respaldo: exportar mis datos
+
+### Agregado
+- **Más > Datos > "Respaldo de mis datos"**: una hoja que descarga una copia de
+  todo, en dos toques:
+  1. **"Preparar respaldo"** lee tus datos directo del servidor y muestra
+     cuántos encontró (ej. "1.240 domicilios · 85 gastos · 6 clientes").
+  2. **"Guardar o compartir todo"** abre el menú de compartir del teléfono con
+     los 4 archivos (guardar en Archivos/Drive, mandar por WhatsApp o correo).
+     Debajo, un botón por archivo para bajarlos por separado (y para el
+     computador o teléfonos sin "compartir archivos").
+- **Archivos** (con la fecha en el nombre):
+  - `domi-domicilios-AAAA-MM-DD.csv` — Fecha, Hora, Nombre, Cliente registrado
+    (el **nombre** del cliente; vacío si no tiene), Valor, Tipo, Pagado, Medio
+    de pago, Fecha de pago, Observación.
+  - `domi-gastos-AAAA-MM-DD.csv` — Fecha, Categoría, Valor, Descripción.
+  - `domi-clientes-AAAA-MM-DD.csv` — Nombre, Teléfono, Abono.
+  - `domi-respaldo-AAAA-MM-DD.json` — todo tal cual está en Firestore (perfil,
+    domicilios, gastos, clientes, con sus ids), con los `creadoEn` convertidos a
+    texto ISO legible.
+- **CSV listos para Excel en Colombia**: separador `;`, marca BOM para que las
+  tildes y la ñ se vean bien, valores como números (sin puntos de miles).
+  Los textos que empiezan con `= + - @` llevan un `'` delante para que Excel no
+  los ejecute como fórmula.
+- **"Último respaldo: hoy / ayer / hace X días / Nunca"**, guardado en el
+  teléfono (`localStorage`, una clave por usuario), **no** en Firestore. Se
+  marca al compartir o al bajar un archivo.
+- `js/respaldo.js` (nuevo).
+
+### Seguridad de los datos
+- **Solo lectura**: el módulo no importa ninguna función de escritura. No hay
+  importar ni restaurar. Las reglas de Firestore no cambian.
+- Lee del **servidor** (`getDocsFromServer`), no de la caché del teléfono: sin
+  internet avisa "Necesitas internet para un respaldo completo" en vez de
+  entregar un archivo incompleto.
+- Cada respaldo cuesta una lectura de Firestore por registro.
+
+### Cambiado
+- El número de versión de la pantalla "Más" ahora sale de `VERSION_APP` en
+  `js/config.js` (un solo sitio; también va dentro del JSON).
+- `DOMI-CONTEXTO.md`: hoja de ruta v1.12–v2.0.
+- Service worker: precachea `js/respaldo.js`; caché `v29`.
+
+---
+
 ## [1.11.1] — La app ya no se recarga al deslizar hacia abajo
 
 ### Corregido

@@ -9,6 +9,6 @@ Reglas que nunca se rompen (detalle en DOMI-CONTEXTO.md, sección 5):
   No borrar, renombrar ni cambiar el tipo de ningún campo existente.
 - Si un cambio puede afectar los datos, **avisar y esperar aprobación** antes de tocar código.
 - JavaScript Vanilla + Firebase. Sin frameworks ni dependencias nuevas.
-- Versiones pequeñas: cada una actualiza `CHANGELOG.md`, el número en `index.html`
-  (`.app-version`) y la versión de la caché en `sw.js`.
+- Versiones pequeñas: cada una actualiza `CHANGELOG.md`, `VERSION_APP` en
+  `js/config.js` y la versión de la caché en `sw.js` (y agrega ahí los archivos nuevos).
 - Explicar en lenguaje sencillo y en español.

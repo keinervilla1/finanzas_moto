@@ -643,3 +643,9 @@ ul{ list-style:none; margin:0; padding:0; }
 @media (prefers-reduced-motion: reduce){
   *{ animation-duration:0.001ms !important; transition-duration:0.001ms !important; }
 }
+/* ---------- Respaldo (hoja en Más > Datos) ---------- */
+.respaldo-ultimo{ margin:0 0 14px; font-size:13px; font-weight:600; color:var(--text-600); }
+.respaldo-resumen{ margin:0 0 12px; text-align:center; font-size:14px; font-weight:700; color:var(--verde-900); }
+.respaldo-sueltos{ margin-top:18px; }
+#respaldoArchivos{ border:1px solid var(--border); box-shadow:none; }
+#respaldoArchivos .settings-row__chevron{ font-size:11px; font-weight:700; letter-spacing:.04em; }

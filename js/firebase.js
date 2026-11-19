@@ -54,5 +54,8 @@ export {
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
 export {
   setDoc, updateDoc, deleteDoc, deleteField, addDoc,
-  onSnapshot, getDocs, query, where, orderBy, limit, startAfter, serverTimestamp
+  onSnapshot, getDocs, query, where, orderBy, limit, startAfter, serverTimestamp,
+  // Solo lectura, directo del servidor (sin caer a la caché local): el
+  // respaldo los usa para no exportar una copia incompleta estando sin señal.
+  getDocsFromServer, getDocFromServer
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';

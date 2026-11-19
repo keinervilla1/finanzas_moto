@@ -70,6 +70,13 @@ export const el = {
   inputClienteNombre: $('#inputClienteNombre'),
   inputClienteTelefono: $('#inputClienteTelefono'),
 
+  respaldoUltimo: $('#respaldoUltimo'),
+  respaldoListo: $('#respaldoListo'),
+  respaldoResumen: $('#respaldoResumen'),
+  respaldoArchivos: $('#respaldoArchivos'),
+  btnCompartirRespaldo: $('#btnCompartirRespaldo'),
+  appVersion: $('#appVersion'),
+
   inputGastoValor: $('#inputGastoValor'),
   inputGastoDescripcion: $('#inputGastoDescripcion'),
   inputGastoFecha: $('#inputGastoFecha'),

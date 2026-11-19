@@ -4,6 +4,10 @@
    mantenibilidad del proyecto). Sin lógica: solo datos.
    ========================================================================= */
 
+/** Versión visible de la app (pantalla "Más" y archivo de respaldo). Único
+ *  sitio donde se cambia en cada versión. */
+export const VERSION_APP = '1.12.0';
+
 /** Meta semanal por defecto para un usuario nuevo (pesos colombianos). */
 export const META_SEMANAL_DEFAULT = 800000;
 
@@ -23,6 +27,10 @@ export const CATEGORIAS_GASTO = {
 
 /** Clave en localStorage para recordar la última pestaña abierta. */
 export const CLAVE_ULTIMA_PESTANA = 'domi_ultima_pestana';
+
+/** Clave en localStorage (+ uid) con la fecha del último respaldo descargado.
+ *  Va en el teléfono, no en Firestore: el respaldo nunca escribe en la nube. */
+export const CLAVE_ULTIMO_RESPALDO = 'domi_ultimo_respaldo_';
 
 /** Pestañas del menú inferior que se recuerdan y se restauran al reabrir. */
 export const PESTANAS_PERSISTENTES = ['inicio', 'semana', 'registros', 'deben', 'frecuentes'];
